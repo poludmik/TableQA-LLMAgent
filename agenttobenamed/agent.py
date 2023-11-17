@@ -1,16 +1,17 @@
-import random
-
 import pandas as pd
-from .llms import LLM
-from .code_manipulation import Code
 from pathlib import Path
 
+import random
+
+from .llms import LLM
+from .code_manipulation import Code
 
 
 class AgentTBN:
-    def __init__(self, csv_path: str):
+    def __init__(self, csv_path: str, max_debug_times: int = 2):
         self.filename = Path(csv_path).name
         self.df = pd.read_csv(csv_path)
+        self.max_debug_times = max_debug_times
         print('damn!')
 
     def answer_query(self, query: str):
@@ -51,12 +52,15 @@ class AgentTBN:
 # print("Pie plot of top 10 largest happiness indices has been saved to 'plots/test_CSV_file_gdp81.png'")
 # """
 
-        res = Code.execute_generated_code(code_to_execute, self.df)
+        res, exception = Code.execute_generated_code(code_to_execute, self.df)
 
+        count = 0
+        while res == "ERROR" and count < self.max_debug_times:
+            regenerated_code = LLM.fix_generated_code(code_to_execute, exception)
+            code_to_execute = Code.extract_code(regenerated_code, provider='local')
+            res, exception = Code.execute_generated_code(code_to_execute, self.df)
+            count += 1
 
-
-
-
-
+        return res
 
 

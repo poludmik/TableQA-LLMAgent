@@ -68,3 +68,13 @@ Example of the output format:
 ```python
 
 ```"""
+
+    fix_code = """The execution of the following code that was provided in the previous step resulted in an error:
+```python
+{code}
+```
+
+The error message is: {error}
+Return a corrected python code that fixes the error. Use the same format with backticks.
+Always include the import statements at the top of the code, and comments and print statements where necessary.
+"""

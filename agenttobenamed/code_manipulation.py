@@ -73,12 +73,16 @@ class Code:
 
     @staticmethod
     def execute_generated_code(code_str: str, df: pd.DataFrame):
-        print(f"{YELLOW}EXECUTING THE CODE{RESET}")
-        with redirect_stdout(io.StringIO()) as output:
-            exec(code_str, {'df': df})
+        try:
+            print(f"{BLUE}EXECUTING THE CODE{RESET}:")
+            with redirect_stdout(io.StringIO()) as output:
+                exec(code_str, {'df': df})
+        except Exception as e:
+            print(f"{RED}   CODE PRODUCED AN ERROR{RESET}:\n{MAGENTA}     {e}{RESET}\n")
+            return "ERROR", e
 
         results = output.getvalue()
         output.truncate(0)
         output.seek(0)
-        print(f"{YELLOW}FINISHED EXECUTING, RESULT{RESET}:\n{results}")
-        return results
+        print(f"{YELLOW}   FINISHED EXECUTING, RESULTS{MAGENTA}:\n     {results}{RESET}\n")
+        return results, None

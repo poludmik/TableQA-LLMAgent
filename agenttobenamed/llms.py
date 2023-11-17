@@ -27,6 +27,7 @@ class TopicClassifier(BaseModel):
 class Role(Enum):
     PLANNER=0
     CODER=1
+    DEBUGGER=2
 
 
 class LLM:
@@ -102,7 +103,7 @@ class LLM:
         count = 0
         while run.status != "completed":
             run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-            print(f"{YELLOW}RUN STATUS{RESET}: {run.status}")
+            print(f"{YELLOW}    RUN STATUS{RESET}: {run.status}")
             time.sleep(1.5)
             count += 1
 
@@ -130,4 +131,7 @@ class LLM:
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(1), plan=plan)
         return LLM._get_response_from_assistant(prompt, model, role=Role.CODER)
 
-
+    @staticmethod
+    def fix_generated_code(code_to_be_fixed, error_message, model="gpt-3.5-turbo-1106"):
+        prompt = Prompts.fix_code.format(code=code_to_be_fixed, error=error_message)
+        return LLM._get_response_from_assistant(prompt, model, Role.DEBUGGER)
