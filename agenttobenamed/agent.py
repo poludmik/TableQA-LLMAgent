@@ -2,6 +2,7 @@ import random
 
 import pandas as pd
 from .llms import LLM
+from .code_manipulation import Code
 from pathlib import Path
 
 
@@ -20,7 +21,41 @@ class AgentTBN:
 # 2. Succeed
 # 3. Win
 # """
-        generated_code = LLM.generate_code_with_gpt(query, self.df, plan)
+
+        generated_code = LLM.generate_code_with_gpt(query, self.df, plan, model="gpt-4-1106-preview")
+        code_to_execute = Code.extract_code(generated_code, provider='local') # 'local' removes the definition of a new df if there is one
+
+#         code_to_execute = """# import necessary libraries
+# import pandas as pd
+# import matplotlib.pyplot as plt
+#
+# # 1. Sort the DataFrame in descending order based on the 'happiness_index' column
+# df = df.sort_values('happiness_index', ascending=False)
+#
+# # 2. Extract the top 10 rows from the sorted DataFrame to get the largest happiness indices
+# top_10_largest = df.head(10)
+#
+# # 3. Create a pie plot using the extracted top 10 rows
+# plt.pie(top_10_largest['happiness_index'], labels=top_10_largest['country'], autopct='%1.1f%%')
+#
+# # 4. Set the aspect ratio of the pie plot to be equal to make it a circle
+# plt.axis('equal')
+#
+# # 5. Add a title to the pie plot
+# plt.title('Top 10 Largest Happiness Indices by Country')
+#
+# # 6. Save the pie plot
+# plt.savefig('plots/test_CSV_file_gdp81.png')
+#
+# # Output the result
+# print("Pie plot of top 10 largest happiness indices has been saved to 'plots/test_CSV_file_gdp81.png'")
+# """
+
+        res = Code.execute_generated_code(code_to_execute, self.df)
+
+
+
+
 
 
 

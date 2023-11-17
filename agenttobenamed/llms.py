@@ -7,13 +7,11 @@ from langchain.output_parsers.openai_functions import PydanticAttrOutputFunction
 from langchain.pydantic_v1 import BaseModel
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from operator import itemgetter
-from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
+from openai import OpenAI
 
 import time
 from enum import Enum
-
-from openai import OpenAI
 
 from .logger import *
 from .prompts import Prompts
@@ -25,9 +23,11 @@ class TopicClassifier(BaseModel):
     topic: Literal["plot", "general"]
     "The topic of the user question. One of 'plot' or 'general'."
 
+
 class Role(Enum):
     PLANNER=0
     CODER=1
+
 
 class LLM:
 
@@ -129,6 +129,5 @@ class LLM:
 
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(1), plan=plan)
         return LLM._get_response_from_assistant(prompt, model, role=Role.CODER)
-
 
 
