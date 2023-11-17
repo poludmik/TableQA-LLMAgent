@@ -61,7 +61,7 @@ Return only the python code that accomplishes the following tasks:
 Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
 Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
 You must include the neccessery import statements at the top of the code.
-Include print statements to output the final result of your code.
+You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
 
 Example of the output format:
