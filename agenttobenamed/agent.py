@@ -14,4 +14,13 @@ class AgentTBN:
 
     def answer_query(self, query: str):
         possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
-        LLM.plan_steps_with_llm(query, self.df, save_plot_name=possible_plotname)
+        plan = LLM.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
+#         plan = """1. Sort
+# 2. Succeed
+# 3. Win
+# """
+        generated_code = LLM.generate_code_with_gpt(query, self.df, plan)
+        return generated_code
+
+
+

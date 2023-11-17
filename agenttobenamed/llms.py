@@ -35,8 +35,8 @@ class LLM:
         """
         print(f"{BLUE}SELECTING A PROMPT:{RESET}")
 
-        temlate_for_plot_planner = Prompts.generate_steps_for_plot.format(input=user_query, plotname=save_plot_name, df_head=df.head(2))
-        temlate_for_math_planner = Prompts.generate_steps_no_plot.format(df_head=df.head(2), input=user_query)
+        temlate_for_plot_planner = Prompts.generate_steps_for_plot.format(input=user_query, plotname=save_plot_name, df_head=df.head(1))
+        temlate_for_math_planner = Prompts.generate_steps_no_plot.format(df_head=df.head(1), input=user_query)
 
         prompt_branch = RunnableBranch(
             (lambda x: x["topic"] == "plot", PromptTemplate.from_template(temlate_for_plot_planner)),
@@ -61,7 +61,7 @@ class LLM:
         return result_prompt
 
     @staticmethod
-    def plan_steps_with_llm(user_query,
+    def plan_steps_with_gpt(user_query,
                             df,
                             save_plot_name,
                             model="gpt-3.5-turbo-1106"): # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
@@ -109,4 +109,13 @@ class LLM:
         # print(f"{BLUE}RUN OBJECT{RESET}: {run}")
 
         messages = client.beta.threads.messages.list(thread_id=thread.id)
-        print(f"{BLUE}ASSISTANT MESSAGE{RESET}: {messages.data[0].content[0].text.value}")
+        # print(f"{BLUE}ASSISTANT MESSAGE{RESET}: {messages.data[0].content[0].text.value}")
+
+        return messages.data[0].content[0].text.value
+
+    @staticmethod
+    def generate_code_with_gpt(user_query, df, plan):
+        prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(1), plan=plan)
+
+
+
