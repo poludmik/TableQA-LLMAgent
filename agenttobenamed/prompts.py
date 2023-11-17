@@ -67,5 +67,4 @@ You must use the backticks to enclose the code.
 Example of the output format:
 ```python
 
-```
-"""
+```"""

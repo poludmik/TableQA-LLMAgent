@@ -11,6 +11,7 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 
 import time
+from enum import Enum
 
 from openai import OpenAI
 
@@ -24,7 +25,9 @@ class TopicClassifier(BaseModel):
     topic: Literal["plot", "general"]
     "The topic of the user question. One of 'plot' or 'general'."
 
-
+class Role(Enum):
+    PLANNER=0
+    CODER=1
 
 class LLM:
 
@@ -61,19 +64,16 @@ class LLM:
         return result_prompt
 
     @staticmethod
-    def plan_steps_with_gpt(user_query,
-                            df,
-                            save_plot_name,
-                            model="gpt-3.5-turbo-1106"): # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
+    def _get_response_from_assistant(prompt_in: str, model: str = "gpt-3.5-turbo-1106", role: Role = Role.PLANNER):
+        print(f"{BLUE}STARTING OPENAI ASSISTANT{RESET}: {str(role)}")
 
-        selected_prompt = LLM.get_prompt_from_router(user_query, df, save_plot_name, model).text
-        print(selected_prompt)
-
-        print(f"{BLUE}STARTING OPENAI ASSISTANT.{RESET}")
+        init_instructions = "You are an AI data analyst and your job is to assist the user with simple data analysis."
+        if role == Role.CODER:
+            init_instructions += " You generate clear and simple code following the given instructions."
 
         client = OpenAI()
         my_assistant = client.beta.assistants.create(
-            instructions="You are an AI data analyst and your job is to assist the user with simple data analysis.",
+            instructions=init_instructions,
             name="Helpfull Data Analyst",
             model=model
         )
@@ -91,7 +91,7 @@ class LLM:
         run = client.beta.threads.runs.create(
             thread_id=thread.id,
             assistant_id=my_assistant.id,
-            instructions=selected_prompt,
+            instructions=prompt_in,
         )
 
         # messages = client.beta.threads.messages.list(thread_id=thread.id)
@@ -103,19 +103,32 @@ class LLM:
         while run.status != "completed":
             run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
             print(f"{YELLOW}RUN STATUS{RESET}: {run.status}")
-            time.sleep(1)
+            time.sleep(1.5)
             count += 1
 
         # print(f"{BLUE}RUN OBJECT{RESET}: {run}")
-
         messages = client.beta.threads.messages.list(thread_id=thread.id)
-        # print(f"{BLUE}ASSISTANT MESSAGE{RESET}: {messages.data[0].content[0].text.value}")
-
+        print(f"{BLUE}ASSISTANT MESSAGE{RESET}: {messages.data[0].content[0].text.value}")
         return messages.data[0].content[0].text.value
 
     @staticmethod
-    def generate_code_with_gpt(user_query, df, plan):
+    def plan_steps_with_gpt(user_query,
+                            df,
+                            save_plot_name,
+                            model="gpt-3.5-turbo-1106"): # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
+
+        selected_prompt = LLM.get_prompt_from_router(user_query, df, save_plot_name, model).text
+        print(selected_prompt)
+        return LLM._get_response_from_assistant(selected_prompt, model, role=Role.PLANNER)
+
+    @staticmethod
+    def generate_code_with_gpt(user_query,
+                               df,
+                               plan,
+                               model="gpt-3.5-turbo-1106"):
+
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(1), plan=plan)
+        return LLM._get_response_from_assistant(prompt, model, role=Role.CODER)
 
 
 
