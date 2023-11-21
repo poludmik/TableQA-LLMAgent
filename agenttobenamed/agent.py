@@ -19,47 +19,60 @@ class AgentTBN:
         llm_cals = LLM(use_assistants_api=False, model=self.gpt_model)
         possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
 
-        plan = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
+        plan, _ = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
 
-        generated_code = llm_cals.generate_code_with_gpt(query, self.df, plan)
+        generated_code, _ = llm_cals.generate_code_with_gpt(query, self.df, plan)
         code_to_execute = Code.extract_code(generated_code, provider='local') # 'local' removes the definition of a new df if there is one
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df)
 
-        print("Result:", res)
-
         count = 0
         while res == "ERROR" and count < self.max_debug_times:
-            regenerated_code = llm_cals.fix_generated_code(code_to_execute, exception)
+            regenerated_code, _ = llm_cals.fix_generated_code(code_to_execute, exception)
             code_to_execute = Code.extract_code(regenerated_code, provider='local')
             res, exception = Code.execute_generated_code(code_to_execute, self.df)
             count += 1
 
         return res
 
+    def answer_query_with_details(self, query: str):
+        """
+        Returns a dictionary with info:
+            - Which prompts were used and where,
+            - Generated code,
+            - Number of error corrections etc.
+        """
+        details = {}
 
-#         code_to_execute = """# import necessary libraries
-# import pandas as pd
-# import matplotlib.pyplot as plt
-#
-# # 1. Sort the DataFrame in descending order based on the 'happiness_index' column
-# df = df.sort_values('happiness_index', ascending=False)
-#
-# # 2. Extract the top 10 rows from the sorted DataFrame to get the largest happiness indices
-# top_10_largest = df.head(10)
-#
-# # 3. Create a pie plot using the extracted top 10 rows
-# plt.pie(top_10_largest['happiness_index'], labels=top_10_largest['country'], autopct='%1.1f%%')
-#
-# # 4. Set the aspect ratio of the pie plot to be equal to make it a circle
-# plt.axis('equal')
-#
-# # 5. Add a title to the pie plot
-# plt.title('Top 10 Largest Happiness Indices by Country')
-#
-# # 6. Save the pie plot
-# plt.savefig('plots/test_CSV_file_gdp81.png')
-#
-# # Output the result
-# print("Pie plot of top 10 largest happiness indices has been saved to 'plots/test_CSV_file_gdp81.png'")
-# """
+        llm_cals = LLM(use_assistants_api=False, model=self.gpt_model)
+        possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
+
+        plan, planner_prompt = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
+        details["prompt_user_for_planner"] = planner_prompt[0]
+        details["tagged_query_type"] = planner_prompt[1]
+
+        generated_code, coder_prompt = llm_cals.generate_code_with_gpt(query, self.df, plan)
+        code_to_execute = Code.extract_code(generated_code,
+                                            provider='local')  # 'local' removes the definition of a new df if there is one
+        details["steps_for_codegen"] = coder_prompt
+        details["first_generated_code"] = code_to_execute
+
+        res, exception = Code.execute_generated_code(code_to_execute, self.df)
+
+        debug_prompt = ""
+
+        count = 0
+        while res == "ERROR" and count < self.max_debug_times:
+            regenerated_code, debug_prompt = llm_cals.fix_generated_code(self.df, code_to_execute, exception)
+            code_to_execute = Code.extract_code(regenerated_code, provider='local')
+            res, exception = Code.execute_generated_code(code_to_execute, self.df)
+            count += 1
+
+        details["count_of_fixing_errors"] = str(count)
+        details["final_generated_code"] = code_to_execute
+        details["last_debug_prompt"] = debug_prompt
+        details["successful_code_execution"] = "True" if res != "ERROR" else "False"
+        details["result_repl_stdout"] = res
+        details["plot_filename"] = possible_plotname if planner_prompt[1] == "plot" else ""
+
+        return res, details

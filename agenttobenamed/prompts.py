@@ -75,6 +75,9 @@ Example of the output format:
 {code}
 ```
 
+The result of the `print(df.head(1))` for the analyzed dataframe `df` is:
+{df_head}
+
 The error message is: {error}
 Return a corrected python code that fixes the error. Use the same format with backticks.
 Always include the import statements at the top of the code, and comments and print statements where necessary.

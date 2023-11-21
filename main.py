@@ -8,7 +8,7 @@ agent = AgentTBN(csv_path, gpt_model="gpt-3.5-turbo-1106")  # "gpt-3.5-turbo-110
 
 
 # query = "What is the maximum gdp?"
-query = "minimal value of happy index"
+query = "minimal value of rate of happy"
 # query = "Find top 10 largest happiness indices and pieplot them."
 # query = "Find the correlation between gdp and happiness index."
 # query = "Create a barplot of the top 5 minimal values in the happiness index column."

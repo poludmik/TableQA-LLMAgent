@@ -51,13 +51,10 @@ class LLM:
         else:
             self._call_openai_llm = self._get_response_from_base_gpt
 
-    def get_prompt_with_tagging(self, user_query, df, save_plot_name):
+    def tag_query_type(self, user_query, df, save_plot_name):
         """
         Select a prompt between the one saving the plot and the one calculating some math.
         """
-        temlate_for_plot_planner = Prompts.generate_steps_for_plot.format(input=user_query, plotname=save_plot_name, df_head=df.head(1))
-        temlate_for_math_planner = Prompts.generate_steps_no_plot.format(df_head=df.head(1), input=user_query)
-
         model = ChatOpenAI(temperature=0)
         tagging_functions = [convert_pydantic_to_openai_function(Tagging)]
         prompt = ChatPromptTemplate.from_messages([
@@ -74,10 +71,7 @@ class LLM:
 
         print(f"{BLUE}SELECTED A PROMPT:{RESET} {YELLOW}{query_topic}{RESET}")
 
-        if query_topic == "plot":
-            return temlate_for_plot_planner
-        else:
-            return temlate_for_math_planner
+        return query_topic
 
     # Halts on chain.invoke() sometimes
     def get_prompt_from_router(self, user_query, df, save_plot_name):
@@ -162,20 +156,22 @@ class LLM:
         print(f"{BLUE}ASSISTANT MESSAGE{RESET}: {messages.data[0].content[0].text.value}")
         return messages.data[0].content[0].text.value
 
-    def plan_steps_with_gpt(self, user_query,
-                            df,
-                            save_plot_name):
+    def plan_steps_with_gpt(self, user_query, df, save_plot_name):
+        query_type = self.tag_query_type(user_query, df, save_plot_name)
 
-        selected_prompt = self.get_prompt_with_tagging(user_query, df, save_plot_name)
-        return self._call_openai_llm(selected_prompt, role=Role.PLANNER)
+        temlate_for_plot_planner = Prompts.generate_steps_for_plot.format(input=user_query, plotname=save_plot_name, df_head=df.head(1))
+        temlate_for_math_planner = Prompts.generate_steps_no_plot.format(df_head=df.head(1), input=user_query)
 
-    def generate_code_with_gpt(self, user_query,
-                               df,
-                               plan):
+        selected_prompt = temlate_for_math_planner
+        if query_type == "plot":
+            selected_prompt = temlate_for_plot_planner
 
+        return self._call_openai_llm(selected_prompt, role=Role.PLANNER), (selected_prompt, query_type)
+
+    def generate_code_with_gpt(self, user_query, df, plan):
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(1), plan=plan)
-        return self._call_openai_llm(prompt, role=Role.CODER)
+        return self._call_openai_llm(prompt, role=Role.CODER), prompt
 
-    def fix_generated_code(self, code_to_be_fixed, error_message):
-        prompt = Prompts.fix_code.format(code=code_to_be_fixed, error=error_message)
-        return self._call_openai_llm(prompt, Role.DEBUGGER)
+    def fix_generated_code(self, df, code_to_be_fixed, error_message):
+        prompt = Prompts.fix_code.format(code=code_to_be_fixed, df_head=df.head(1), error=error_message)
+        return self._call_openai_llm(prompt, Role.DEBUGGER), prompt
