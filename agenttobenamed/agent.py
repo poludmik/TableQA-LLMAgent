@@ -15,16 +15,24 @@ class AgentTBN:
         print('damn!')
 
     def answer_query(self, query: str):
+        llm_cals = LLM()
         possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
-        plan = LLM.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
+        plan = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
 
-#         plan = """1. Sort
-# 2. Succeed
-# 3. Win
-# """
-
-        generated_code = LLM.generate_code_with_gpt(query, self.df, plan)
+        generated_code = llm_cals.generate_code_with_gpt(query, self.df, plan)
         code_to_execute = Code.extract_code(generated_code, provider='local') # 'local' removes the definition of a new df if there is one
+
+        res, exception = Code.execute_generated_code(code_to_execute, self.df)
+
+        count = 0
+        while res == "ERROR" and count < self.max_debug_times:
+            regenerated_code = llm_cals.fix_generated_code(code_to_execute, exception)
+            code_to_execute = Code.extract_code(regenerated_code, provider='local')
+            res, exception = Code.execute_generated_code(code_to_execute, self.df)
+            count += 1
+
+        return res
+
 
 #         code_to_execute = """# import necessary libraries
 # import pandas as pd
@@ -51,16 +59,3 @@ class AgentTBN:
 # # Output the result
 # print("Pie plot of top 10 largest happiness indices has been saved to 'plots/test_CSV_file_gdp81.png'")
 # """
-
-        res, exception = Code.execute_generated_code(code_to_execute, self.df)
-
-        count = 0
-        while res == "ERROR" and count < self.max_debug_times:
-            regenerated_code = LLM.fix_generated_code(code_to_execute, exception)
-            code_to_execute = Code.extract_code(regenerated_code, provider='local')
-            res, exception = Code.execute_generated_code(code_to_execute, self.df)
-            count += 1
-
-        return res
-
-

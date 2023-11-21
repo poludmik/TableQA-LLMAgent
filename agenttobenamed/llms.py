@@ -32,8 +32,17 @@ class Role(Enum):
 
 class LLM:
 
-    @staticmethod
-    def get_prompt_from_router(user_query, df, save_plot_name, gpt_model):
+    def __init__(self, model="gpt-3.5-turbo-1106"):
+        self.client = OpenAI()
+        self.my_assistant = self.client.beta.assistants.create(
+            # instructions=init_instructions,
+            name="Helpfull Data Analyst",
+            model=model
+        )
+        self.model = model
+        # self.thread = self.client.beta.threads.create()
+
+    def get_prompt_from_router(self, user_query, df, save_plot_name):
         """
         Select a prompt between the one saving the plot and the one calculating some math.
         """
@@ -49,7 +58,7 @@ class LLM:
         )
 
         classifier_function = convert_pydantic_to_openai_function(TopicClassifier)
-        llm = ChatOpenAI(model=gpt_model).bind(
+        llm = ChatOpenAI(model=self.model).bind(
             functions=[classifier_function], function_call={"name": "TopicClassifier"}
         )
         parser = PydanticAttrOutputFunctionsParser(
@@ -64,22 +73,14 @@ class LLM:
         result_prompt = chain.invoke({"input": user_query})
         return result_prompt
 
-    @staticmethod
-    def _get_response_from_assistant(prompt_in: str, model: str = "gpt-3.5-turbo-1106", role: Role = Role.PLANNER):
+    def _get_response_from_assistant(self, prompt_in: str, role: Role = Role.PLANNER):
         print(f"{BLUE}STARTING OPENAI ASSISTANT{RESET}: {str(role)}")
 
-        init_instructions = "You are an AI data analyst and your job is to assist the user with simple data analysis."
-        if role == Role.CODER:
-            init_instructions += " You generate clear and simple code following the given instructions."
+        # init_instructions = "You are an AI data analyst and your job is to assist the user with simple data analysis."
+        # if role == Role.CODER:
+        #     init_instructions += " You generate clear and simple code following the given instructions."
 
-        client = OpenAI()
-        my_assistant = client.beta.assistants.create(
-            # instructions=init_instructions,
-            name="Helpfull Data Analyst",
-            model=model
-        )
-
-        thread = client.beta.threads.create()
+        thread = self.client.beta.threads.create()
 
         # Add a message to a thread
         # message = client.beta.threads.messages.create(
@@ -89,9 +90,9 @@ class LLM:
         # )
 
         # Run the assistant (start it)
-        run = client.beta.threads.runs.create(
+        run = self.client.beta.threads.runs.create(
             thread_id=thread.id,
-            assistant_id=my_assistant.id,
+            assistant_id=self.my_assistant.id,
             instructions=prompt_in,
         )
 
@@ -99,10 +100,10 @@ class LLM:
         # print(f"{BLUE}USER MESSAGE{RESET}: {messages.data[-1].content[0].text.value}")
 
         # Get the status of a Run
-        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        run = self.client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
         count = 0
         while run.status != "completed" and run.status != "failed":
-            run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+            run = self.client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
             print(f"{YELLOW}    RUN STATUS{RESET}: {run.status}")
             time.sleep(1.5)
             count += 1
@@ -111,30 +112,25 @@ class LLM:
             return None
 
         # print(f"{BLUE}RUN OBJECT{RESET}: {run}")
-        messages = client.beta.threads.messages.list(thread_id=thread.id)
+        messages = self.client.beta.threads.messages.list(thread_id=thread.id)
         print(f"{BLUE}ASSISTANT MESSAGE{RESET}: {messages.data[0].content[0].text.value}")
         return messages.data[0].content[0].text.value
 
-    @staticmethod
-    def plan_steps_with_gpt(user_query,
+    def plan_steps_with_gpt(self, user_query,
                             df,
-                            save_plot_name,
-                            model="gpt-3.5-turbo-1106"): # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
+                            save_plot_name): # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
 
-        selected_prompt = LLM.get_prompt_from_router(user_query, df, save_plot_name, model).text
+        selected_prompt = self.get_prompt_from_router(user_query, df, save_plot_name).text
         print(selected_prompt)
-        return LLM._get_response_from_assistant(selected_prompt, model, role=Role.PLANNER)
+        return self._get_response_from_assistant(selected_prompt, role=Role.PLANNER)
 
-    @staticmethod
-    def generate_code_with_gpt(user_query,
+    def generate_code_with_gpt(self, user_query,
                                df,
-                               plan,
-                               model="gpt-3.5-turbo-1106"):
+                               plan):
 
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(1), plan=plan)
-        return LLM._get_response_from_assistant(prompt, model, role=Role.CODER)
+        return self._get_response_from_assistant(prompt, role=Role.CODER)
 
-    @staticmethod
-    def fix_generated_code(code_to_be_fixed, error_message, model="gpt-3.5-turbo-1106"):
+    def fix_generated_code(self, code_to_be_fixed, error_message):
         prompt = Prompts.fix_code.format(code=code_to_be_fixed, error=error_message)
-        return LLM._get_response_from_assistant(prompt, model, Role.DEBUGGER)
+        return self._get_response_from_assistant(prompt, Role.DEBUGGER)
