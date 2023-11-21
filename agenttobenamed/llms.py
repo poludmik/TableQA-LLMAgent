@@ -1,15 +1,15 @@
-from langchain.llms import OpenAI
+# from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage
 from langchain.prompts import PromptTemplate
-from langchain.schema.runnable import RunnableBranch
+from langchain.schema.runnable import RunnableBranch, RunnablePassthrough
 from typing import Literal
-from langchain.output_parsers.openai_functions import PydanticAttrOutputFunctionsParser
-from langchain.pydantic_v1 import BaseModel
+from langchain.output_parsers.openai_functions import PydanticAttrOutputFunctionsParser, JsonOutputFunctionsParser
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from operator import itemgetter
-from langchain.schema.runnable import RunnablePassthrough
-from openai import OpenAI as OpenAI_assistants
+from openai import OpenAI
 
 import time
 from enum import Enum
@@ -25,6 +25,11 @@ class TopicClassifier(BaseModel):
     "The topic of the user question. One of 'plot' or 'general'."
 
 
+class Tagging(BaseModel):
+    """Tag the piece of text with particular info. Classify if the user asked for a vizualization, e.g. plot or graph, or asked for some general numerical result, e.g. finding correlation or maximum value."""
+    topic: str = Field(description="Topic of user's query, must be `plot` or `general`.")
+
+
 class Role(Enum):
     PLANNER=0
     CODER=1
@@ -33,11 +38,11 @@ class Role(Enum):
 
 class LLM:
 
-    def __init__(self, model="gpt-3.5-turbo-1106", use_assistants=True):
+    def __init__(self, model="gpt-3.5-turbo-1106", use_assistants_api=True):
         self.model = model
-        if use_assistants:
+        if use_assistants_api:
             self._call_openai_llm = self._get_response_from_assistant
-            self.client = OpenAI_assistants()
+            self.client = OpenAI()
             self.my_assistant = self.client.beta.assistants.create(
                 # instructions=init_instructions,
                 name="Helpfull Data Analyst",
@@ -46,6 +51,35 @@ class LLM:
         else:
             self._call_openai_llm = self._get_response_from_base_gpt
 
+    def get_prompt_with_tagging(self, user_query, df, save_plot_name):
+        """
+        Select a prompt between the one saving the plot and the one calculating some math.
+        """
+        temlate_for_plot_planner = Prompts.generate_steps_for_plot.format(input=user_query, plotname=save_plot_name, df_head=df.head(1))
+        temlate_for_math_planner = Prompts.generate_steps_no_plot.format(df_head=df.head(1), input=user_query)
+
+        model = ChatOpenAI(temperature=0)
+        tagging_functions = [convert_pydantic_to_openai_function(Tagging)]
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "Think carefully, and then tag the text as instructed"),
+            ("user", "{input}")
+        ])
+        model_with_functions = model.bind(
+            functions=tagging_functions,
+            function_call={"name": "Tagging"}
+        )
+        tagging_chain = prompt | model_with_functions | JsonOutputFunctionsParser()
+
+        query_topic = tagging_chain.invoke({"input": user_query})["topic"] # If halts => could be a problem with parser
+
+        print(f"{BLUE}SELECTED A PROMPT:{RESET} {YELLOW}{query_topic}{RESET}")
+
+        if query_topic == "plot":
+            return temlate_for_plot_planner
+        else:
+            return temlate_for_math_planner
+
+    # Halts on chain.invoke() sometimes
     def get_prompt_from_router(self, user_query, df, save_plot_name):
         """
         Select a prompt between the one saving the plot and the one calculating some math.
@@ -75,10 +109,10 @@ class LLM:
                  )
         # second_chain = prompt_branch
         result_prompt = chain.invoke({"input": user_query})
-        return result_prompt
+        return result_prompt.text
 
     def _get_response_from_base_gpt(self, prompt_in: str, role: Role = Role.PLANNER):
-        print(f"{BLUE}STARTING LANGCHAIN.LLM{RESET}: {str(role)}")
+        print(f"{BLUE}STARTING LANGCHAIN.LLM{RESET}: {YELLOW}{str(role)}{RESET}")
         chat_model = ChatOpenAI()
         messages = [HumanMessage(content=prompt_in)]
         res = chat_model.invoke(messages).content
@@ -86,7 +120,7 @@ class LLM:
         return res
 
     def _get_response_from_assistant(self, prompt_in: str, role: Role = Role.PLANNER):
-        print(f"{BLUE}STARTING OPENAI ASSISTANT{RESET}: {str(role)}")
+        print(f"{BLUE}STARTING OPENAI ASSISTANT{RESET}: {YELLOW}{str(role)}{RESET}")
 
         # init_instructions = "You are an AI data analyst and your job is to assist the user with simple data analysis."
         # if role == Role.CODER:
@@ -132,8 +166,7 @@ class LLM:
                             df,
                             save_plot_name):
 
-        selected_prompt = self.get_prompt_from_router(user_query, df, save_plot_name).text
-        print(selected_prompt)
+        selected_prompt = self.get_prompt_with_tagging(user_query, df, save_plot_name)
         return self._call_openai_llm(selected_prompt, role=Role.PLANNER)
 
     def generate_code_with_gpt(self, user_query,

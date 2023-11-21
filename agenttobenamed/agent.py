@@ -8,15 +8,17 @@ from .code_manipulation import Code
 
 
 class AgentTBN:
-    def __init__(self, csv_path: str, max_debug_times: int = 2):
+    def __init__(self, csv_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106"):
         self.filename = Path(csv_path).name
         self.df = pd.read_csv(csv_path)
+        self.gpt_model = gpt_model
         self.max_debug_times = max_debug_times
         print('damn!')
 
     def answer_query(self, query: str):
-        llm_cals = LLM(use_assistants=False, model="gpt-4-1106-preview")  # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
+        llm_cals = LLM(use_assistants_api=False, model=self.gpt_model)
         possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
+
         plan = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
 
         generated_code = llm_cals.generate_code_with_gpt(query, self.df, plan)
