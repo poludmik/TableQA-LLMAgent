@@ -37,6 +37,7 @@ The DataFrame 'df' is already defined and populated with necessary data. So ther
 
 Present your algorithm with at most six simple, clear English steps. 
 Remember to explain steps rather than to write code.
+Don't include any visualization steps like plots or charts.
 You must output only these steps, the code generation assistant is going to follow them.
 
 Here's an example of output for your inspiration:

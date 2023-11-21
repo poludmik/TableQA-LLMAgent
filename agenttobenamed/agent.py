@@ -15,7 +15,7 @@ class AgentTBN:
         print('damn!')
 
     def answer_query(self, query: str):
-        llm_cals = LLM()
+        llm_cals = LLM(use_assistants=False, model="gpt-4-1106-preview")  # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
         possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
         plan = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
 
@@ -23,6 +23,8 @@ class AgentTBN:
         code_to_execute = Code.extract_code(generated_code, provider='local') # 'local' removes the definition of a new df if there is one
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df)
+
+        print("Result:", res)
 
         count = 0
         while res == "ERROR" and count < self.max_debug_times:

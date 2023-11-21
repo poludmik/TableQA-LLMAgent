@@ -1,5 +1,6 @@
 from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
+from langchain.schema import HumanMessage
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import RunnableBranch
 from typing import Literal
@@ -8,7 +9,7 @@ from langchain.pydantic_v1 import BaseModel
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from operator import itemgetter
 from langchain.schema.runnable import RunnablePassthrough
-from openai import OpenAI
+from openai import OpenAI as OpenAI_assistants
 
 import time
 from enum import Enum
@@ -32,15 +33,18 @@ class Role(Enum):
 
 class LLM:
 
-    def __init__(self, model="gpt-3.5-turbo-1106"):
-        self.client = OpenAI()
-        self.my_assistant = self.client.beta.assistants.create(
-            # instructions=init_instructions,
-            name="Helpfull Data Analyst",
-            model=model
-        )
+    def __init__(self, model="gpt-3.5-turbo-1106", use_assistants=True):
         self.model = model
-        # self.thread = self.client.beta.threads.create()
+        if use_assistants:
+            self._call_openai_llm = self._get_response_from_assistant
+            self.client = OpenAI_assistants()
+            self.my_assistant = self.client.beta.assistants.create(
+                # instructions=init_instructions,
+                name="Helpfull Data Analyst",
+                model=model
+            )
+        else:
+            self._call_openai_llm = self._get_response_from_base_gpt
 
     def get_prompt_from_router(self, user_query, df, save_plot_name):
         """
@@ -72,6 +76,14 @@ class LLM:
         # second_chain = prompt_branch
         result_prompt = chain.invoke({"input": user_query})
         return result_prompt
+
+    def _get_response_from_base_gpt(self, prompt_in: str, role: Role = Role.PLANNER):
+        print(f"{BLUE}STARTING LANGCHAIN.LLM{RESET}: {str(role)}")
+        chat_model = ChatOpenAI()
+        messages = [HumanMessage(content=prompt_in)]
+        res = chat_model.invoke(messages).content
+        print(f"{BLUE}LANGCHAIN.LLM MESSAGE{RESET}: {res}")
+        return res
 
     def _get_response_from_assistant(self, prompt_in: str, role: Role = Role.PLANNER):
         print(f"{BLUE}STARTING OPENAI ASSISTANT{RESET}: {str(role)}")
@@ -118,19 +130,19 @@ class LLM:
 
     def plan_steps_with_gpt(self, user_query,
                             df,
-                            save_plot_name): # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
+                            save_plot_name):
 
         selected_prompt = self.get_prompt_from_router(user_query, df, save_plot_name).text
         print(selected_prompt)
-        return self._get_response_from_assistant(selected_prompt, role=Role.PLANNER)
+        return self._call_openai_llm(selected_prompt, role=Role.PLANNER)
 
     def generate_code_with_gpt(self, user_query,
                                df,
                                plan):
 
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(1), plan=plan)
-        return self._get_response_from_assistant(prompt, role=Role.CODER)
+        return self._call_openai_llm(prompt, role=Role.CODER)
 
     def fix_generated_code(self, code_to_be_fixed, error_message):
         prompt = Prompts.fix_code.format(code=code_to_be_fixed, error=error_message)
-        return self._get_response_from_assistant(prompt, Role.DEBUGGER)
+        return self._call_openai_llm(prompt, Role.DEBUGGER)
