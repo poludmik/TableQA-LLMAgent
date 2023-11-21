@@ -23,7 +23,7 @@ class AgentTBN:
 # 3. Win
 # """
 
-        generated_code = LLM.generate_code_with_gpt(query, self.df, plan, model="gpt-4-1106-preview")
+        generated_code = LLM.generate_code_with_gpt(query, self.df, plan)
         code_to_execute = Code.extract_code(generated_code, provider='local') # 'local' removes the definition of a new df if there is one
 
 #         code_to_execute = """# import necessary libraries

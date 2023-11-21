@@ -62,6 +62,8 @@ class Code:
             code_res = re.sub(r"(?<![a-zA-Z0-9_-])df\s*=\s*pd\.DataFrame\((.*?)\)",
                           "# The dataframe df has already been defined", code_res)
 
+        code_res = code_res.replace("plt.show()", "")
+
         # Define the regular expression pattern to match the blacklist items
         pattern = r"^(.*\b(" + "|".join(blacklist) + r")\b.*)$"
 

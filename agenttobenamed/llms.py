@@ -74,7 +74,7 @@ class LLM:
 
         client = OpenAI()
         my_assistant = client.beta.assistants.create(
-            instructions=init_instructions,
+            # instructions=init_instructions,
             name="Helpfull Data Analyst",
             model=model
         )
@@ -101,11 +101,14 @@ class LLM:
         # Get the status of a Run
         run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
         count = 0
-        while run.status != "completed":
+        while run.status != "completed" and run.status != "failed":
             run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
             print(f"{YELLOW}    RUN STATUS{RESET}: {run.status}")
             time.sleep(1.5)
             count += 1
+
+        if run.status == "failed":
+            return None
 
         # print(f"{BLUE}RUN OBJECT{RESET}: {run}")
         messages = client.beta.threads.messages.list(thread_id=thread.id)
