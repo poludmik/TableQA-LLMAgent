@@ -13,7 +13,7 @@ class AgentTBN:
         self.df = pd.read_csv(csv_path)
         self.gpt_model = gpt_model
         self.max_debug_times = max_debug_times
-        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         # print('damn!')
 
     def answer_query(self, query: str, show_plot=False):
@@ -37,7 +37,7 @@ class AgentTBN:
             res, exception = Code.execute_generated_code(code_to_execute, self.df)
             count += 1
 
-        return res, possible_plotname
+        return possible_plotname if res == "" else res, possible_plotname
 
     def answer_query_with_details(self, query: str):
         """
@@ -56,8 +56,7 @@ class AgentTBN:
         details["tagged_query_type"] = planner_prompt[1]
 
         generated_code, coder_prompt = llm_cals.generate_code_with_gpt(query, self.df, plan)
-        code_to_execute = Code.extract_code(generated_code,
-                                            provider='local')  # 'local' removes the definition of a new df if there is one
+        code_to_execute = Code.extract_code(generated_code, provider='local')  # 'local' removes the definition of a new df if there is one
         details["steps_for_codegen"] = coder_prompt
         details["first_generated_code"] = code_to_execute
 
@@ -79,4 +78,4 @@ class AgentTBN:
         details["result_repl_stdout"] = res
         details["plot_filename"] = possible_plotname if planner_prompt[1] == "plot" else ""
 
-        return res, details
+        return possible_plotname if res == "" else res, details

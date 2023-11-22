@@ -1,6 +1,8 @@
 import re
 # import code # another way to use REPL
 import io
+import traceback
+import sys
 from contextlib import redirect_stdout
 from .logger import *
 
@@ -17,7 +19,6 @@ class Code:
 
         # Remove the minimum indentation from each line
         return '\n'.join(line[min_indent:] for line in lines)
-
 
     # Method to clean the LLM response, and extract the code.
     @staticmethod
@@ -75,14 +76,31 @@ class Code:
         return code_res.strip()
 
     @staticmethod
+    def filter_exec_traceback(full_traceback, exception_type, exception_value):
+        # Split the full traceback into lines and filter those that originate from "<string>"
+        filtered_tb_lines = [line for line in full_traceback.split('\n') if '<string>' in line]
+
+        # Combine the filtered lines and append the exception type and message
+        filtered_traceback = '\n'.join(filtered_tb_lines)
+        if filtered_traceback:  # Add a newline only if there's a traceback to show
+            filtered_traceback += '\n'
+        filtered_traceback += f"{exception_type}: {exception_value}"
+
+        return filtered_traceback
+
+    @staticmethod
     def execute_generated_code(code_str: str, df: pd.DataFrame):
         try:
             print(f"{BLUE}EXECUTING THE CODE{RESET}:")
             with redirect_stdout(io.StringIO()) as output:
                 exec(code_str, {'df': df})
         except Exception as e:
-            print(f"{RED}   CODE PRODUCED AN ERROR{RESET}:\n{MAGENTA}     {e}{RESET}\n")
-            return "ERROR", e
+            exc_type, exc_value, tb = sys.exc_info()
+            full_traceback = traceback.format_exc()
+            # Filter the traceback
+            exec_traceback = Code.filter_exec_traceback(full_traceback, exc_type.__name__, str(exc_value))
+            print(f"{RED}   CODE PRODUCED AN ERROR{RESET}:\n{MAGENTA}     {exec_traceback}{RESET}\n")
+            return "ERROR", exec_traceback
 
         results = output.getvalue()
         output.truncate(0)
