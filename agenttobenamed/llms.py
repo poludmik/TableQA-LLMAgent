@@ -74,13 +74,14 @@ class LLM:
         return query_topic
 
     # Halts on chain.invoke() sometimes
-    def get_prompt_from_router(self, user_query, df, save_plot_name):
+    def get_prompt_from_router(self, user_query, df, save_plot_name=None):
         """
         Select a prompt between the one saving the plot and the one calculating some math.
         """
         print(f"{BLUE}SELECTING A PROMPT:{RESET}")
-
-        temlate_for_plot_planner = Prompts.generate_steps_for_plot.format(input=user_query, plotname=save_plot_name, df_head=df.head(1))
+        temlate_for_plot_planner = Prompts.generate_steps_for_plot_show.format(input=user_query, df_head=df.head(1))
+        if save_plot_name is not None:
+            temlate_for_plot_planner = Prompts.generate_steps_for_plot_save.format(input=user_query, plotname=save_plot_name, df_head=df.head(1))
         temlate_for_math_planner = Prompts.generate_steps_no_plot.format(df_head=df.head(1), input=user_query)
 
         prompt_branch = RunnableBranch(
@@ -159,7 +160,9 @@ class LLM:
     def plan_steps_with_gpt(self, user_query, df, save_plot_name):
         query_type = self.tag_query_type(user_query, df, save_plot_name)
 
-        temlate_for_plot_planner = Prompts.generate_steps_for_plot.format(input=user_query, plotname=save_plot_name, df_head=df.head(1))
+        temlate_for_plot_planner = Prompts.generate_steps_for_plot_show.format(input=user_query, df_head=df.head(1))
+        if save_plot_name is not None:
+            temlate_for_plot_planner = Prompts.generate_steps_for_plot_save.format(input=user_query, plotname=save_plot_name, df_head=df.head(1))
         temlate_for_math_planner = Prompts.generate_steps_no_plot.format(df_head=df.head(1), input=user_query)
 
         selected_prompt = temlate_for_math_planner

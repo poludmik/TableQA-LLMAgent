@@ -21,7 +21,7 @@ class Code:
 
     # Method to clean the LLM response, and extract the code.
     @staticmethod
-    def extract_code(response: str, provider: str) -> str:
+    def extract_code(response: str, provider: str, show_plot=False) -> str:
         # Use re.sub to replace all occurrences of the <|im_sep|> with the ```.
         response = re.sub(re.escape("<|im_sep|>"), "```", response)
 
@@ -62,7 +62,8 @@ class Code:
             code_res = re.sub(r"(?<![a-zA-Z0-9_-])df\s*=\s*pd\.DataFrame\((.*?)\)",
                           "# The dataframe df has already been defined", code_res)
 
-        code_res = code_res.replace("plt.show()", "")
+        if not show_plot:
+            code_res = code_res.replace("plt.show()", "")
 
         # Define the regular expression pattern to match the blacklist items
         pattern = r"^(.*\b(" + "|".join(blacklist) + r")\b.*)$"

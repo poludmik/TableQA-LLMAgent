@@ -15,14 +15,17 @@ class AgentTBN:
         self.max_debug_times = max_debug_times
         print('damn!')
 
-    def answer_query(self, query: str):
+    def answer_query(self, query: str, show_plot=False):
         llm_cals = LLM(use_assistants_api=False, model=self.gpt_model)
-        possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
+
+        possible_plotname = None
+        if not show_plot:
+            possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
 
         plan, _ = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
 
         generated_code, _ = llm_cals.generate_code_with_gpt(query, self.df, plan)
-        code_to_execute = Code.extract_code(generated_code, provider='local') # 'local' removes the definition of a new df if there is one
+        code_to_execute = Code.extract_code(generated_code, provider='local', show_plot=show_plot) # 'local' removes the definition of a new df if there is one
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df)
 
@@ -33,7 +36,7 @@ class AgentTBN:
             res, exception = Code.execute_generated_code(code_to_execute, self.df)
             count += 1
 
-        return res
+        return res, possible_plotname
 
     def answer_query_with_details(self, query: str):
         """
