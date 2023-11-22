@@ -13,7 +13,8 @@ class AgentTBN:
         self.df = pd.read_csv(csv_path)
         self.gpt_model = gpt_model
         self.max_debug_times = max_debug_times
-        print('damn!')
+        pd.set_option('display.max_columns', None)
+        # print('damn!')
 
     def answer_query(self, query: str, show_plot=False):
         llm_cals = LLM(use_assistants_api=False, model=self.gpt_model)
@@ -31,7 +32,7 @@ class AgentTBN:
 
         count = 0
         while res == "ERROR" and count < self.max_debug_times:
-            regenerated_code, _ = llm_cals.fix_generated_code(code_to_execute, exception)
+            regenerated_code, _ = llm_cals.fix_generated_code(self.df, code_to_execute, exception)
             code_to_execute = Code.extract_code(regenerated_code, provider='local')
             res, exception = Code.execute_generated_code(code_to_execute, self.df)
             count += 1
