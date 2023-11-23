@@ -8,56 +8,41 @@ from .code_manipulation import Code
 
 
 class AgentTBN:
-    def __init__(self, csv_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106"):
-        self.filename = Path(csv_path).name
-        self.df = pd.read_csv(csv_path)
+    def __init__(self, table_file_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106"):
+        self.filename = Path(table_file_path).name
+        if table_file_path.endswith('.csv'):
+            self.df = pd.read_csv(table_file_path)
+        elif table_file_path.endswith('.xlsx'):
+            self.df = pd.read_excel(table_file_path)
+        else:
+            raise Exception("Only csvs and xlsx are currently supported.")
         self.gpt_model = gpt_model
         self.max_debug_times = max_debug_times
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         # print('damn!')
 
-    def answer_query(self, query: str, show_plot=False):
-        llm_cals = LLM(use_assistants_api=False, model=self.gpt_model)
-
-        possible_plotname = None
-        if not show_plot:
-            possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
-
-        plan, _ = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
-
-        generated_code, _ = llm_cals.generate_code_with_gpt(query, self.df, plan)
-        code_to_execute = Code.extract_code(generated_code, provider='local', show_plot=show_plot) # 'local' removes the definition of a new df if there is one
-
-        res, exception = Code.execute_generated_code(code_to_execute, self.df)
-
-        count = 0
-        while res == "ERROR" and count < self.max_debug_times:
-            regenerated_code, _ = llm_cals.fix_generated_code(self.df, code_to_execute, exception)
-            code_to_execute = Code.extract_code(regenerated_code, provider='local')
-            res, exception = Code.execute_generated_code(code_to_execute, self.df)
-            count += 1
-
-        return possible_plotname if res == "" else res, possible_plotname
-
-    def answer_query_with_details(self, query: str):
+    def answer_query(self, query: str, show_plot=False, save_plot_path=None):
         """
-        Returns a dictionary with info:
+        Additionally returns a dictionary with info:
             - Which prompts were used and where,
             - Generated code,
             - Number of error corrections etc.
         """
         details = {}
 
+        possible_plotname = None
+        if not show_plot: # No need to plt.show()
+            if save_plot_path is None: # Save plot to a random filepath
+                possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
+            else: # Save plot to a provided filepath
+                possible_plotname = save_plot_path
+
         llm_cals = LLM(use_assistants_api=False, model=self.gpt_model)
-        possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
 
         plan, planner_prompt = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
-        details["prompt_user_for_planner"] = planner_prompt[0]
-        details["tagged_query_type"] = planner_prompt[1]
 
         generated_code, coder_prompt = llm_cals.generate_code_with_gpt(query, self.df, plan)
         code_to_execute = Code.extract_code(generated_code, provider='local')  # 'local' removes the definition of a new df if there is one
-        details["steps_for_codegen"] = coder_prompt
         details["first_generated_code"] = code_to_execute
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df)
@@ -71,6 +56,9 @@ class AgentTBN:
             res, exception = Code.execute_generated_code(code_to_execute, self.df)
             count += 1
 
+        details["steps_for_code_gen"] = coder_prompt
+        details["prompt_user_for_planner"] = planner_prompt[0]
+        details["tagged_query_type"] = planner_prompt[1]
         details["count_of_fixing_errors"] = str(count)
         details["final_generated_code"] = code_to_execute
         details["last_debug_prompt"] = debug_prompt
