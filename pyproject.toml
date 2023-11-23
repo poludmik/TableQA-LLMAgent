@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "agenttobenamed"
-version = "0.1.1"
+version = "0.1.12"
 description = ""
 authors = ["poludmik <michael.poludin@gmail.com>"]
 readme = "README.md"
@@ -14,7 +14,6 @@ openai = "^1.3.2"
 pandas = "^2.1.3"
 langchain = "^0.0.336"
 matplotlib = "^3.8.1"
-
 
 [build-system]
 requires = ["poetry-core"]
