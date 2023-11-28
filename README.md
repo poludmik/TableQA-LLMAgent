@@ -7,6 +7,6 @@
 * If the REPL throws an error, GPT will begin debugging until resolved.
 * The result is the string output of the code 'print(result)' + optionally, saved image with a plot.
 
-**Query example:** 'What is the correlation between GDP and happiness index?'
+**Query example:** 'Find correlation between GDP and happiness index, subtract 0.4 and multiply by 1e6.'
 
 ![alt text](https://github.com/poludmik/AgentToBeNamed/blob/master/README/AgentScreenshot.png?raw=true)
