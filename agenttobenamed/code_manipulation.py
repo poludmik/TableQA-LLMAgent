@@ -94,6 +94,11 @@ class Code:
             print(f"{BLUE}EXECUTING THE CODE{RESET}:")
             with redirect_stdout(io.StringIO()) as output:
                 exec(code_str, {'df': df})
+            results = output.getvalue()
+            output.truncate(0)
+            output.seek(0)
+            print(f"{YELLOW}   FINISHED EXECUTING, RESULTS{MAGENTA}:\n     {results}{RESET}\n")
+            return results, None
         except Exception as e:
             exc_type, exc_value, tb = sys.exc_info()
             full_traceback = traceback.format_exc()
@@ -102,8 +107,4 @@ class Code:
             print(f"{RED}   CODE PRODUCED AN ERROR{RESET}:\n{MAGENTA}     {exec_traceback}{RESET}\n")
             return "ERROR", exec_traceback
 
-        results = output.getvalue()
-        output.truncate(0)
-        output.seek(0)
-        print(f"{YELLOW}   FINISHED EXECUTING, RESULTS{MAGENTA}:\n     {results}{RESET}\n")
-        return results, None
+
