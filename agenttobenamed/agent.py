@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-
+import matplotlib.pyplot as plt
 import random
 
 from .llms import LLM
@@ -37,12 +37,12 @@ class AgentTBN:
             else: # Save plot to a provided filepath
                 possible_plotname = save_plot_path
 
-        llm_cals = LLM(use_assistants_api=False, model=self.gpt_model)
+        llm_calls = LLM(use_assistants_api=False, model=self.gpt_model)
 
-        plan, planner_prompt = llm_cals.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
+        plan, planner_prompt = llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
 
-        generated_code, coder_prompt = llm_cals.generate_code_with_gpt(query, self.df, plan)
-        code_to_execute = Code.extract_code(generated_code, provider='local')  # 'local' removes the definition of a new df if there is one
+        generated_code, coder_prompt = llm_calls.generate_code_with_gpt(query, self.df, plan)
+        code_to_execute = Code.extract_code(generated_code, provider='local', show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df)
@@ -51,10 +51,15 @@ class AgentTBN:
 
         count = 0
         while res == "ERROR" and count < self.max_debug_times:
-            regenerated_code, debug_prompt = llm_cals.fix_generated_code(self.df, code_to_execute, exception)
+            regenerated_code, debug_prompt = llm_calls.fix_generated_code(self.df, code_to_execute, exception)
             code_to_execute = Code.extract_code(regenerated_code, provider='local')
             res, exception = Code.execute_generated_code(code_to_execute, self.df)
             count += 1
+
+        # to remove outputs of the previous plot, works with show_plot=True, because plt.show() waits for user to close the window
+        plt.clf()
+        plt.cla()
+        plt.close()
 
         details["steps_for_code_gen"] = coder_prompt
         details["prompt_user_for_planner"] = planner_prompt[0]
