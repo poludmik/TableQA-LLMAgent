@@ -50,7 +50,9 @@ class AgentTBN:
         debug_prompt = ""
 
         count = 0
+        errors = []
         while res == "ERROR" and count < self.max_debug_times:
+            errors.append(exception)
             regenerated_code, debug_prompt = llm_calls.fix_generated_code(self.df, code_to_execute, exception)
             code_to_execute = Code.extract_code(regenerated_code, provider='local')
             res, exception = Code.execute_generated_code(code_to_execute, self.df)
@@ -70,5 +72,6 @@ class AgentTBN:
         details["successful_code_execution"] = "True" if res != "ERROR" else "False"
         details["result_repl_stdout"] = res
         details["plot_filename"] = possible_plotname if planner_prompt[1] == "plot" else ""
+        details["code_errors"] = errors + [exception] if res == "ERROR" else []
 
         return possible_plotname if res == "" else res, details
