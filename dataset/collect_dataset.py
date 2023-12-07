@@ -13,20 +13,18 @@ dataset_df = pd.read_excel("dataset/dataset_clean.xlsx").astype(str)
 print(dataset_df)
 
 for index, row in dataset_df.iterrows():
-    if index <= 6:
+    if index <= 6 or index >= 8:
         continue
     if type(row["user_query"]) != str:
         continue
 
     # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
     agent = AgentTBN(folder_path + row["table_name"], max_debug_times=3, gpt_model="gpt-4-1106-preview")
-    save_plot_to = "plots/" + os.path.splitext(row["table_name"])[0] + "_Num" + str(index) + ".png"
+    save_plot_to = "dataset/produced_plots/" + os.path.splitext(row["table_name"])[0] + "_idx" + str(index) + ".png"
     result, details = agent.answer_query(row["user_query"], save_plot_path=save_plot_to)
 
     for key in details.keys():
         dataset_df.loc[index, key] = details[key]
-
-    break
 
 dataset_df.to_excel("dataset/dataset_changed.xlsx")
 

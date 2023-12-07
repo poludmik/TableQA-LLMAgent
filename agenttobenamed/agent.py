@@ -57,13 +57,15 @@ class AgentTBN:
             code_to_execute = Code.extract_code(regenerated_code, provider='local')
             res, exception = Code.execute_generated_code(code_to_execute, self.df)
             count += 1
+        errors = errors + exception if res == "ERROR" else []
 
         # to remove outputs of the previous plot, works with show_plot=True, because plt.show() waits for user to close the window
         plt.clf()
         plt.cla()
         plt.close()
 
-        details["steps_for_code_gen"] = coder_prompt
+        details["plan"] = plan
+        details["coder_prompt"] = coder_prompt
         details["prompt_user_for_planner"] = planner_prompt[0]
         details["tagged_query_type"] = planner_prompt[1]
         details["count_of_fixing_errors"] = str(count)
@@ -72,6 +74,6 @@ class AgentTBN:
         details["successful_code_execution"] = "True" if res != "ERROR" else "False"
         details["result_repl_stdout"] = res
         details["plot_filename"] = possible_plotname if planner_prompt[1] == "plot" else ""
-        details["code_errors"] = errors + [exception] if res == "ERROR" else []
+        details["code_errors"] = '\n'.join([f"{index}. \"{item}\"" for index, item in enumerate(errors)])
 
         return possible_plotname if res == "" else res, details
