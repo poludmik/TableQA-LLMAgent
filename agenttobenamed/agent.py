@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -33,7 +35,7 @@ class AgentTBN:
         possible_plotname = None
         if not show_plot: # No need to plt.show()
             if save_plot_path is None: # Save plot to a random filepath
-                possible_plotname = "plots/" + self.filename[:-4] + str(random.randint(10, 99)) + ".png"
+                possible_plotname = "plots/" + os.path.splitext(os.path.basename(self.filename))[0] + str(random.randint(10, 99)) + ".png"
             else: # Save plot to a provided filepath
                 possible_plotname = save_plot_path
 
