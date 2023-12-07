@@ -1,3 +1,4 @@
+import copy
 import re
 # import code # another way to use REPL
 import io
@@ -39,9 +40,9 @@ class Code:
                      ] # TODO: add 'os'?
 
         # Use a regular expression to find all code segments enclosed in triple backticks with "python"
-        # code_segments = re.findall(r'```python\s*(.*?)\s*```', response, re.DOTALL)
+        code_segments = re.findall(r'```python\s*(.*?)\s*```', response, re.DOTALL)
         # Use a regular expression to find all code segments enclosed in triple backticks with or without "python"
-        code_segments = re.findall(r'```(?:python\s*)?(.*?)\s*```', response, re.DOTALL)
+        # code_segments = re.findall(r'```(?:python\s*)?(.*?)\s*```', response, re.DOTALL)
         if not code_segments:
             code_segments = re.findall(r'\[PYTHON\](.*?)\[/PYTHON\]', response, re.DOTALL)
 
@@ -64,6 +65,8 @@ class Code:
                           "# The dataframe df has already been defined", code_res)
 
         if not show_plot:
+            if "plt.show()" in code_res:
+                print(f"{RED}PLT.SHOW() in the code!!!{RESET}:")
             code_res = code_res.replace("plt.show()", "")
 
         # Define the regular expression pattern to match the blacklist items
@@ -94,7 +97,7 @@ class Code:
             print(f"{BLUE}EXECUTING THE CODE{RESET}:")
             with redirect_stdout(io.StringIO()) as output:
                 exec(code_str, {'df': df})
-            results = output.getvalue()
+            results = copy.deepcopy(output.getvalue())
             output.truncate(0)
             output.seek(0)
             print(f"{YELLOW}   FINISHED EXECUTING, RESULTS{MAGENTA}:\n     {results}{RESET}\n")

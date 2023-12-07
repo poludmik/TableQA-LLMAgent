@@ -173,10 +173,12 @@ class LLM:
 
         return self._call_openai_llm(selected_prompt, role=Role.PLANNER), (selected_prompt, query_type)
 
-    def generate_code_with_gpt(self, user_query, df, plan):
+    def generate_code_with_gpt(self, user_query, df, plan, show_plot=False, tagged_query_type="general"):
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(1), plan=plan)
+        if tagged_query_type == "plot" and not show_plot: # don't include plt.show() in the generated code
+            prompt = Prompts.generate_code_for_plot_save.format(input=user_query, df_head=df.head(1), plan=plan)
         return self._call_openai_llm(prompt, role=Role.CODER), prompt
 
-    def fix_generated_code(self, df, code_to_be_fixed, error_message):
-        prompt = Prompts.fix_code.format(code=code_to_be_fixed, df_head=df.head(1), error=error_message)
+    def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
+        prompt = Prompts.fix_code.format(code=code_to_be_fixed, df_head=df.head(1), error=error_message, input=user_query)
         return self._call_openai_llm(prompt, Role.DEBUGGER), prompt

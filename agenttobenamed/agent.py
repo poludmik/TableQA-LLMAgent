@@ -41,7 +41,7 @@ class AgentTBN:
 
         plan, planner_prompt = llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
 
-        generated_code, coder_prompt = llm_calls.generate_code_with_gpt(query, self.df, plan)
+        generated_code, coder_prompt = llm_calls.generate_code_with_gpt(query, self.df, plan, show_plot=show_plot, tagged_query_type=planner_prompt[1])
         code_to_execute = Code.extract_code(generated_code, provider='local', show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
