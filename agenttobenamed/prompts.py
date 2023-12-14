@@ -10,7 +10,7 @@ Formulate your response as an algorithm, breaking the solution into steps, inclu
 such as names of dataframe columns. Make sure to state saving the plot to '{plotname}' in the last step. Do not include showing the plot to the user interractively; only save it to the '{plotname}'.
 
 This algorithm will be later used to write a Python code and applied to the existing pandas DataFrame `df`. 
-The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the first row of `df`: 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beggining of the 'df': 
 {df_head}
 
 Present your algorithm in up to six simple, clear English steps. 
@@ -32,7 +32,7 @@ Formulate your response as an algorithm, breaking the solution into steps, inclu
 such as names of dataframe columns. Make sure to state showing the plot in the last step.
 
 This algorithm will be later used to write a Python code and applied to the existing pandas DataFrame `df`. 
-The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the first row of `df`: 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beggining of the 'df': 
 {df_head}
 
 Present your algorithm in up to six simple, clear English steps. 
@@ -54,7 +54,7 @@ Formulate your response as an algorithm, breaking the solution into steps, inclu
 such as names of dataframe columns.
 
 This algorithm will be later used to write a Python code and applied to the existing pandas DataFrame 'df'. 
-The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the first row of 'df': 
+The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beggining of the 'df': 
 {df_head}
 
 Present your algorithm with at most six simple, clear English steps. 
@@ -75,7 +75,7 @@ You also have a list of subtasks to be accomplished using Python.
 
 You have been presented with a pandas dataframe named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head(1))` is:
+The result of `print(df.head({head_number}))` is:
 {df_head}
 
 Return only the python code that accomplishes the following tasks:
@@ -97,7 +97,7 @@ You also have a list of subtasks to be accomplished using Python.
 
 You have been presented with a pandas dataframe named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head(1))` is:
+The result of `print(df.head({head_number}))` is:
 {df_head}
 
 Return only the python code that accomplishes the following tasks:
@@ -119,7 +119,7 @@ Example of the output format:
 
 The code was designed to achieve this user request: {input}.
 The DataFrame `df`, that we are working with has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head(1))` is:
+The result of `print(df.head({head_number}))` is:
 {df_head}
 
 The execution of the following code that was provided in the previous step resulted in an error:

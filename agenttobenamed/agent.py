@@ -11,8 +11,9 @@ from .logger import *
 
 
 class AgentTBN:
-    def __init__(self, table_file_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106"):
+    def __init__(self, table_file_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106", head_number=2):
         self.filename = Path(table_file_path).name
+        self.head_number = head_number
         if table_file_path.endswith('.csv'):
             self.df = pd.read_csv(table_file_path)
         elif table_file_path.endswith('.xlsx'):
@@ -41,7 +42,7 @@ class AgentTBN:
             else: # Save plot to a provided filepath
                 possible_plotname = save_plot_path
 
-        llm_calls = LLM(use_assistants_api=False, model=self.gpt_model)
+        llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number)
 
         plan, planner_prompt = llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
         tagged_query_type = planner_prompt[1]
