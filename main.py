@@ -9,7 +9,7 @@ csv_path = "csvs/Car Specs 12.xlsx"
 agent = AgentTBN(csv_path,
                  max_debug_times=2,
                  gpt_model="gpt-4-1106-preview",
-                 head_number=2
+                 head_number=1
                  )  # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
 
 
