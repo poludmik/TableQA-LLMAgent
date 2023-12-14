@@ -7,6 +7,7 @@ import random
 
 from .llms import LLM
 from .code_manipulation import Code
+from .logger import *
 
 
 class AgentTBN:
@@ -21,6 +22,7 @@ class AgentTBN:
         self.gpt_model = gpt_model
         self.max_debug_times = max_debug_times
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
+        pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')
 
     def answer_query(self, query: str, show_plot=False, save_plot_path=None):
@@ -42,12 +44,13 @@ class AgentTBN:
         llm_calls = LLM(use_assistants_api=False, model=self.gpt_model)
 
         plan, planner_prompt = llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
+        tagged_query_type = planner_prompt[1]
 
-        generated_code, coder_prompt = llm_calls.generate_code_with_gpt(query, self.df, plan, show_plot=show_plot, tagged_query_type=planner_prompt[1])
+        generated_code, coder_prompt = llm_calls.generate_code_with_gpt(query, self.df, plan, show_plot=show_plot, tagged_query_type=tagged_query_type)
         code_to_execute = Code.extract_code(generated_code, provider='local', show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
-        res, exception = Code.execute_generated_code(code_to_execute, self.df)
+        res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=tagged_query_type)
 
         debug_prompt = ""
 
@@ -55,11 +58,15 @@ class AgentTBN:
         errors = []
         while res == "ERROR" and count < self.max_debug_times:
             errors.append(exception)
-            regenerated_code, debug_prompt = llm_calls.fix_generated_code(self.df, code_to_execute, exception)
+            regenerated_code, debug_prompt = llm_calls.fix_generated_code(self.df, code_to_execute, exception, query)
             code_to_execute = Code.extract_code(regenerated_code, provider='local')
-            res, exception = Code.execute_generated_code(code_to_execute, self.df)
+            res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type)
             count += 1
         errors = errors + exception if res == "ERROR" else []
+
+        if res == "" and tagged_query_type == "general":
+            print(f"{RED}Empty output from exec() with the text-intended answer!{RESET}")
+
 
         # to remove outputs of the previous plot, works with show_plot=True, because plt.show() waits for user to close the window
         plt.clf()
@@ -69,13 +76,20 @@ class AgentTBN:
         details["plan"] = plan
         details["coder_prompt"] = coder_prompt
         details["prompt_user_for_planner"] = planner_prompt[0]
-        details["tagged_query_type"] = planner_prompt[1]
+        details["tagged_query_type"] = tagged_query_type
         details["count_of_fixing_errors"] = str(count)
         details["final_generated_code"] = code_to_execute
         details["last_debug_prompt"] = debug_prompt
         details["successful_code_execution"] = "True" if res != "ERROR" else "False"
         details["result_repl_stdout"] = res
-        details["plot_filename"] = possible_plotname if planner_prompt[1] == "plot" else ""
+        details["plot_filename"] = possible_plotname if tagged_query_type == "plot" else ""
         details["code_errors"] = '\n'.join([f"{index}. \"{item}\"" for index, item in enumerate(errors)])
 
-        return possible_plotname if res == "" else res, details
+        ret_value = res
+        if res == "":
+            if tagged_query_type == "general":
+                ret_value = "Empty output from the exec() function for the text-intended answer."
+            elif tagged_query_type == "plot":
+                ret_value = possible_plotname
+
+        return ret_value, details

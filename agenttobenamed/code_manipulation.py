@@ -92,12 +92,17 @@ class Code:
         return filtered_traceback
 
     @staticmethod
-    def execute_generated_code(code_str: str, df: pd.DataFrame):
+    def execute_generated_code(code_str: str, df: pd.DataFrame, tagged_query_type):
         try:
             print(f"{BLUE}EXECUTING THE CODE{RESET}:")
-            with redirect_stdout(io.StringIO()) as output:
-                exec(code_str, {'df': df})
-            results = copy.deepcopy(output.getvalue())
+            results = ""
+            for i in [1, 2]:
+                with redirect_stdout(io.StringIO()) as output:
+                    exec(code_str, {'df': df})
+                results = copy.deepcopy(output.getvalue())
+                if results != "" or tagged_query_type == "plot":
+                    break
+                print(f"{RED}{i}. Empty exec() output for the 'general' query type!{RESET}")
             output.truncate(0)
             output.seek(0)
             print(f"{YELLOW}   FINISHED EXECUTING, RESULTS{MAGENTA}:\n     {results}{RESET}\n")
