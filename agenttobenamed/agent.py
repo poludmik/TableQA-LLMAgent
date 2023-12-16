@@ -63,7 +63,7 @@ class AgentTBN:
             code_to_execute = Code.extract_code(regenerated_code, provider='local')
             res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type)
             count += 1
-        errors = errors + exception if res == "ERROR" else []
+        errors = errors + exception if res == "ERROR" or not code_to_execute.strip() else []
 
         if res == "" and tagged_query_type == "general":
             print(f"{RED}Empty output from exec() with the text-intended answer!{RESET}")

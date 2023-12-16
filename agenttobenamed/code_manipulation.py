@@ -40,6 +40,8 @@ class Code:
                      ] # TODO: add 'os'?
 
         # Use a regular expression to find all code segments enclosed in triple backticks with "python"
+        if "```python" not in response:
+            response = "```python\n" + response + "\n```"
         code_segments = re.findall(r'```python\s*(.*?)\s*```', response, re.DOTALL)
         # Use a regular expression to find all code segments enclosed in triple backticks with or without "python"
         # code_segments = re.findall(r'```(?:python\s*)?(.*?)\s*```', response, re.DOTALL)
@@ -102,7 +104,7 @@ class Code:
                 results = copy.deepcopy(output.getvalue())
                 if results != "" or tagged_query_type == "plot":
                     break
-                print(f"{RED}{i}. Empty exec() output for the 'general' query type!{RESET}")
+                print(f"{RED}{i}. Empty exec() output for the 'general' query type!{RESET}") # caused by no ```python  ``` in gpt's response?
             output.truncate(0)
             output.seek(0)
             print(f"{YELLOW}   FINISHED EXECUTING, RESULTS{MAGENTA}:\n     {results}{RESET}\n")
