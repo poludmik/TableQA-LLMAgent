@@ -70,6 +70,7 @@ Here's an example of output for your inspiration:
 5. Print the result.
 """
 
+    # TODO: {input} to ''
     generate_code = """The user provided a query that you need to help achieving: {input}. 
 You also have a list of subtasks to be accomplished using Python.
 
@@ -92,6 +93,7 @@ Example of the output format:
 
 ```"""
 
+    # TODO: {input} to ''
     generate_code_for_plot_save = """The user provided a query that you need to help achieving: {input}. 
 You also have a list of subtasks to be accomplished using Python.
 
@@ -115,6 +117,7 @@ Example of the output format:
 
 ```"""
 
+    # TODO: {input} to ''
     fix_code = """You are a helpful assistant that corrects the python code that resulted in an error and returns the corrected code.
 
 The code was designed to achieve this user request: {input}.
