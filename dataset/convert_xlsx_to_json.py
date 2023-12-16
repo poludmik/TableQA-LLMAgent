@@ -7,6 +7,7 @@ formatted_records = []
 for index, row in df.iterrows():
     record = {
         "coder_prompt": row["coder_prompt"],
+        "plan": row["plan"],
         "generated_code": row["final_generated_code"],
         "query_id": index
     }
