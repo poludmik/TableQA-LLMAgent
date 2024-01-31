@@ -46,6 +46,7 @@ class LLM:
     def __init__(self, model="gpt-3.5-turbo-1106", use_assistants_api=True, head_number=2):
         self.model = model
         self.head_number = head_number
+        self.local_coder_model = None
         if use_assistants_api:
             self._call_openai_llm = self._get_response_from_assistant
             self.client = OpenAI()
@@ -187,21 +188,22 @@ class LLM:
             return self._call_openai_llm(prompt, role=Role.CODER), prompt
         else: # local llm
             tokenizer = AutoTokenizer.from_pretrained(llm)
-            model = AutoModelForCausalLM.from_pretrained(
-                llm,
-                # torch_dtype=torch.bfloat16,
-                device_map={"": 0},
-                # load_in_4bit=True,
-                load_in_8bit=True,
-                # quantization_config=BitsAndBytesConfig(
-                #     load_in_4bit=True,
-                #     bnb_4bit_compute_dtype=torch.bfloat16,
-                #     bnb_4bit_use_double_quant=True,
-                #     bnb_4bit_quant_type='nf4',
-                # ),
-                # low_cpu_mem_usage=True
-            )
-            model.eval()
+            if self.local_coder_model is None:
+                self.local_coder_model = AutoModelForCausalLM.from_pretrained(
+                    llm,
+                    # torch_dtype=torch.bfloat16,
+                    device_map={"": 0},
+                    load_in_4bit=True,
+                    # load_in_8bit=True,
+                    # quantization_config=BitsAndBytesConfig(
+                    #     load_in_4bit=True,
+                    #     bnb_4bit_compute_dtype=torch.bfloat16,
+                    #     bnb_4bit_use_double_quant=True,
+                    #     bnb_4bit_quant_type='nf4',
+                    # ),
+                    # low_cpu_mem_usage=True
+                )
+            self.local_coder_model.eval()
             prompt = f"<s>[INST] {prompt} [/INST]"
 
             max_new_tokens = 500
@@ -222,13 +224,13 @@ class LLM:
                     # )
                 )
                 text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-                print(text)
+                # print(text)
 
                 text = re.sub(r'\[INST\].*?\[/INST\]', '', text, flags=re.DOTALL)
                 print("Text after regex:", text)
                 return text
 
-            return generate(model, prompt), prompt
+            return generate(self.local_coder_model, prompt), prompt
 
     def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
         prompt = Prompts.fix_code.format(code=code_to_be_fixed, df_head=df.head(self.head_number), error=error_message, input=user_query, head_number=self.head_number)

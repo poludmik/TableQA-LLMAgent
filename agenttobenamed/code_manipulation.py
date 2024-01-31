@@ -109,6 +109,8 @@ class Code:
                 if results != "" or tagged_query_type == "plot":
                     break
                 print(f"{RED}{i}. Empty exec() output for the 'general' query type!{RESET}") # caused by no ```python  ``` in gpt's response?
+                if i == 2:
+                    return "", "empty exec()"
             output.truncate(0)
             output.seek(0)
             print(f"{YELLOW}   FINISHED EXECUTING, RESULTS{MAGENTA}:\n     {results}{RESET}\n")

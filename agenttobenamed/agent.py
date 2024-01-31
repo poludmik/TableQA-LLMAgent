@@ -23,6 +23,7 @@ class AgentTBN:
         self.gpt_model = gpt_model
         self.coder_model = coder_model
         self.max_debug_times = max_debug_times
+        self.llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number)
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')
@@ -47,12 +48,10 @@ class AgentTBN:
         if self.coder_model != "gpt":
             provider = "local"
 
-        llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number)
-
-        plan, planner_prompt = llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
+        plan, planner_prompt = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
         tagged_query_type = planner_prompt[1]
 
-        generated_code, coder_prompt = llm_calls.generate_code(query, self.df, plan,
+        generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, plan,
                                                                show_plot=show_plot,
                                                                tagged_query_type=tagged_query_type,
                                                                llm=self.coder_model)
@@ -60,14 +59,18 @@ class AgentTBN:
         details["first_generated_code"] = code_to_execute
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=tagged_query_type)
-
         debug_prompt = ""
 
         count = 0
         errors = []
+
+        if exception == "empty exec()":
+            res = "ERROR"
+            errors.append(exception)
+
         while res == "ERROR" and count < self.max_debug_times:
             errors.append(exception)
-            regenerated_code, debug_prompt = llm_calls.fix_generated_code(self.df, code_to_execute, exception, query)
+            regenerated_code, debug_prompt = self.llm_calls.fix_generated_code(self.df, code_to_execute, exception, query)
             code_to_execute = Code.extract_code(regenerated_code, provider=provider)
             res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type)
             count += 1

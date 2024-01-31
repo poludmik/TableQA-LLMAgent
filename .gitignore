@@ -1,3 +1,4 @@
 .idea/
 csvs/private/
 __pycache__/
+outputs/
