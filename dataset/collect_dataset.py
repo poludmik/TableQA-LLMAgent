@@ -17,11 +17,11 @@ save_dataset_path = f"dataset_changed_{llm_model}_hn-{head_number}_mdt-{max_debu
 dataset_df = pd.read_excel("dataset_changed_gpt-4-1106-preview_hn-2_mdt-2_6.xlsx").astype(str)
 # print(dataset_df)
 
-q_idx = list(range(13, 14))
+# q_idx = list(range(13, 14))
 # q_idx = [77, 6, 3]
 for index, row in dataset_df.iterrows():
-    if index not in q_idx:
-        continue
+    # if index not in q_idx:
+    #     continue
     if row["user_query"] == "" or row["user_query"] == "nan": # for the last row with plot counts
         continue
 

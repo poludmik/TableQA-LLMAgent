@@ -11,7 +11,7 @@ from .logger import *
 
 
 class AgentTBN:
-    def __init__(self, table_file_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106", head_number=2):
+    def __init__(self, table_file_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106", coder_model="gpt", head_number=2):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
         if table_file_path.endswith('.csv'):
@@ -21,6 +21,7 @@ class AgentTBN:
         else:
             raise Exception("Only csvs and xlsx are currently supported.")
         self.gpt_model = gpt_model
+        self.coder_model = coder_model
         self.max_debug_times = max_debug_times
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
@@ -42,13 +43,20 @@ class AgentTBN:
             else: # Save plot to a provided filepath
                 possible_plotname = save_plot_path
 
+        provider = "openai"
+        if self.coder_model != "gpt":
+            provider = "local"
+
         llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number)
 
         plan, planner_prompt = llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
         tagged_query_type = planner_prompt[1]
 
-        generated_code, coder_prompt = llm_calls.generate_code_with_gpt(query, self.df, plan, show_plot=show_plot, tagged_query_type=tagged_query_type)
-        code_to_execute = Code.extract_code(generated_code, provider='local', show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
+        generated_code, coder_prompt = llm_calls.generate_code(query, self.df, plan,
+                                                               show_plot=show_plot,
+                                                               tagged_query_type=tagged_query_type,
+                                                               llm=self.coder_model)
+        code_to_execute = Code.extract_code(generated_code, provider=provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=tagged_query_type)
@@ -60,7 +68,7 @@ class AgentTBN:
         while res == "ERROR" and count < self.max_debug_times:
             errors.append(exception)
             regenerated_code, debug_prompt = llm_calls.fix_generated_code(self.df, code_to_execute, exception, query)
-            code_to_execute = Code.extract_code(regenerated_code, provider='local')
+            code_to_execute = Code.extract_code(regenerated_code, provider=provider)
             res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type)
             count += 1
         errors = errors + exception if res == "ERROR" or not code_to_execute.strip() else []

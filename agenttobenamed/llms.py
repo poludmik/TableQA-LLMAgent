@@ -1,4 +1,6 @@
 # from langchain.llms import OpenAI
+import re
+
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage
@@ -10,6 +12,9 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from operator import itemgetter
 from openai import OpenAI
+
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, GenerationConfig
+import torch
 
 import time
 from enum import Enum
@@ -174,11 +179,56 @@ class LLM:
 
         return self._call_openai_llm(selected_prompt, role=Role.PLANNER), (selected_prompt, query_type)
 
-    def generate_code_with_gpt(self, user_query, df, plan, show_plot=False, tagged_query_type="general"):
+    def generate_code(self, user_query, df, plan, show_plot=False, tagged_query_type="general", llm="gpt"):
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(self.head_number), plan=plan, head_number=self.head_number)
         if tagged_query_type == "plot" and not show_plot: # don't include plt.show() in the generated code
             prompt = Prompts.generate_code_for_plot_save.format(input=user_query, df_head=df.head(self.head_number), plan=plan, head_number=self.head_number)
-        return self._call_openai_llm(prompt, role=Role.CODER), prompt
+        if llm == "gpt":
+            return self._call_openai_llm(prompt, role=Role.CODER), prompt
+        else: # local llm
+            tokenizer = AutoTokenizer.from_pretrained(llm)
+            model = AutoModelForCausalLM.from_pretrained(
+                llm,
+                # torch_dtype=torch.bfloat16,
+                device_map={"": 0},
+                # load_in_4bit=True,
+                load_in_8bit=True,
+                # quantization_config=BitsAndBytesConfig(
+                #     load_in_4bit=True,
+                #     bnb_4bit_compute_dtype=torch.bfloat16,
+                #     bnb_4bit_use_double_quant=True,
+                #     bnb_4bit_quant_type='nf4',
+                # ),
+                # low_cpu_mem_usage=True
+            )
+            model.eval()
+            prompt = f"<s>[INST] {prompt} [/INST]"
+
+            max_new_tokens = 500
+            top_p = 1
+            temperature = 1e-9
+
+            def generate(m, user_question, max_new_tokens=max_new_tokens, top_p=top_p, temperature=temperature):
+                inputs = tokenizer(prompt.format(user_question=user_question), return_tensors="pt").to('cuda')
+                outputs = m.generate(
+                    **inputs,
+                    max_new_tokens=max_new_tokens,
+                    # **inputs,
+                    # generation_config=GenerationConfig(
+                    #     # do_sample=True,
+                    # max_new_tokens=max_new_tokens,
+                    #     # top_p=top_p,
+                    #     # temperature=temperature,
+                    # )
+                )
+                text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+                print(text)
+
+                text = re.sub(r'\[INST\].*?\[/INST\]', '', text, flags=re.DOTALL)
+                print("Text after regex:", text)
+                return text
+
+            return generate(model, prompt), prompt
 
     def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
         prompt = Prompts.fix_code.format(code=code_to_be_fixed, df_head=df.head(self.head_number), error=error_message, input=user_query, head_number=self.head_number)

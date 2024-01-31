@@ -40,10 +40,14 @@ class Code:
                      ] # TODO: add 'os'?
 
         # Use a regular expression to find all code segments enclosed in triple backticks with "python"
-        if "```python" not in response:
-            response = "```python\n" + response + "\n```"
-        code_segments = re.findall(r'```python\s*(.*?)\s*```', response, re.DOTALL)
+        if provider == "local":
+            code_segments = re.findall(r'```(?:python\s*)?(.*?)\s*```', response, re.DOTALL)
+        else:
+            if "```python" not in response:
+                response = "```python\n" + response + "\n```"
+            code_segments = re.findall(r'```python\s*(.*?)\s*```', response, re.DOTALL)
         # Use a regular expression to find all code segments enclosed in triple backticks with or without "python"
+        print("code_segments:", code_segments)
         # code_segments = re.findall(r'```(?:python\s*)?(.*?)\s*```', response, re.DOTALL)
         if not code_segments:
             code_segments = re.findall(r'\[PYTHON\](.*?)\[/PYTHON\]', response, re.DOTALL)
