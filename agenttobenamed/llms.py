@@ -115,7 +115,7 @@ class LLM:
 
     def _get_response_from_base_gpt(self, prompt_in: str, role: Role = Role.PLANNER):
         print(f"{BLUE}STARTING LANGCHAIN.LLM{RESET}: {YELLOW}{str(role)}{RESET}")
-        chat_model = ChatOpenAI()
+        chat_model = ChatOpenAI(model=self.model)
         messages = [HumanMessage(content=prompt_in)]
         res = chat_model.invoke(messages).content
         print(f"{BLUE}LANGCHAIN.LLM MESSAGE{RESET}: {res}")

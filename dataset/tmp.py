@@ -3,7 +3,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_excel("dataset_tables/faculties_tech_uni.xlsx")
+df = pd.read_excel("dataset/dataset_tables/faculties_tech_uni.xlsx")
+print(df.head(3))
 
 # Group the DataFrame by 'Academic Year'
 grouped_df = df.groupby('Academic Year')
