@@ -193,8 +193,8 @@ class LLM:
                     llm,
                     # torch_dtype=torch.bfloat16,
                     device_map={"": 0},
-                    load_in_4bit=True,
-                    # load_in_8bit=True,
+                    # load_in_4bit=True,
+                    load_in_8bit=True,
                     # quantization_config=BitsAndBytesConfig(
                     #     load_in_4bit=True,
                     #     bnb_4bit_compute_dtype=torch.bfloat16,
