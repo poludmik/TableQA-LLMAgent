@@ -16,6 +16,7 @@ def main(cfg):
     coding_llm = cfg.params.coding_llm
     head_number = cfg.params.head_number
     output_filename = cfg.params.output_filename
+    adapter_path = cfg.params.adapter_path
 
     plots_dir = "plots/" # will be in the outputs/ folder (hydra logs), serves as a tmp buffer for plots
 
@@ -62,8 +63,10 @@ def main(cfg):
                                  max_debug_times=max_debug_times,
                                  gpt_model=reasoning_llm,
                                  coder_model=coding_llm,
-                                 head_number=head_number
+                                 head_number=head_number,
+                                 adapter_path=adapter_path
                                  )
+
 
             save_plot_to = plots_dir + os.path.splitext(row["table_name"])[0] + str(index) + "-" + str(random.randint(0, 9)) + ".png"
 

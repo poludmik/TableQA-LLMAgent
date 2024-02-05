@@ -1,5 +1,7 @@
 # from langchain.llms import OpenAI
 import re
+import os
+from os.path import exists, join, isdir
 
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
@@ -15,6 +17,7 @@ from openai import OpenAI
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, GenerationConfig
 import torch
+from peft import PeftModel
 
 import time
 from enum import Enum
@@ -180,7 +183,7 @@ class LLM:
 
         return self._call_openai_llm(selected_prompt, role=Role.PLANNER), (selected_prompt, query_type)
 
-    def generate_code(self, user_query, df, plan, show_plot=False, tagged_query_type="general", llm="gpt"):
+    def generate_code(self, user_query, df, plan, show_plot=False, tagged_query_type="general", llm="gpt", adapter_path=""):
         prompt = Prompts.generate_code.format(input=user_query, df_head=df.head(self.head_number), plan=plan, head_number=self.head_number)
         if tagged_query_type == "plot" and not show_plot: # don't include plt.show() in the generated code
             prompt = Prompts.generate_code_for_plot_save.format(input=user_query, df_head=df.head(self.head_number), plan=plan, head_number=self.head_number)
@@ -203,6 +206,11 @@ class LLM:
                     # ),
                     # low_cpu_mem_usage=True
                 )
+                if adapter_path != "":
+                    adapter_path, _ = get_last_checkpoint(adapter_path)
+                    self.local_coder_model = PeftModel.from_pretrained(self.local_coder_model, adapter_path)
+                    self.local_coder_model.eval()
+
             self.local_coder_model.eval()
             prompt = f"<s>[INST] {prompt} [/INST]"
 
@@ -235,3 +243,21 @@ class LLM:
     def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
         prompt = Prompts.fix_code.format(code=code_to_be_fixed, df_head=df.head(self.head_number), error=error_message, input=user_query, head_number=self.head_number)
         return self._call_openai_llm(prompt, Role.DEBUGGER), prompt
+
+
+def get_last_checkpoint(checkpoint_dir):
+    if isdir(checkpoint_dir):
+        is_completed = exists(join(checkpoint_dir, 'completed'))
+        if is_completed:
+            print("what")
+            return None, True # already finished
+        max_step = 0
+        for filename in os.listdir(checkpoint_dir):
+            if isdir(join(checkpoint_dir, filename)) and filename.startswith('checkpoint'):
+                max_step = max(max_step, int(filename.replace('checkpoint-', '')))
+        if max_step == 0: return None, is_completed # training started, but no checkpoint
+        checkpoint_dir = join(checkpoint_dir, f'checkpoint-{max_step}')
+        print(f"Found a previous checkpoint at: {checkpoint_dir}")
+        return checkpoint_dir, is_completed # checkpoint found!
+    print("isdir is false")
+    return None, False # first training

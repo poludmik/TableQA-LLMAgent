@@ -11,7 +11,7 @@ from .logger import *
 
 
 class AgentTBN:
-    def __init__(self, table_file_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106", coder_model="gpt", head_number=2):
+    def __init__(self, table_file_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106", coder_model="gpt", adapter_path="", head_number=2):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
         if table_file_path.endswith('.csv'):
@@ -22,6 +22,7 @@ class AgentTBN:
             raise Exception("Only csvs and xlsx are currently supported.")
         self.gpt_model = gpt_model
         self.coder_model = coder_model
+        self.adapter_path = adapter_path
         self.max_debug_times = max_debug_times
         self.llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number)
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
@@ -54,7 +55,8 @@ class AgentTBN:
         generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, plan,
                                                                show_plot=show_plot,
                                                                tagged_query_type=tagged_query_type,
-                                                               llm=self.coder_model)
+                                                               llm=self.coder_model,
+                                                               adapter_path=self.adapter_path)
         code_to_execute = Code.extract_code(generated_code, provider=provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
