@@ -1,4 +1,7 @@
 .idea/
-csvs/private/
+dataset/dataset_tables/private/
 __pycache__/
 outputs/
+dataset/private/
+evaluation/conf/config_collect_private.yaml
+evaluation/results_private/
