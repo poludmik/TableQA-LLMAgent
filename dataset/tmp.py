@@ -1,24 +1,12 @@
-# To test the generated code
-
 import pandas as pd
-import matplotlib.pyplot as plt
 
-df = pd.read_excel("dataset/dataset_tables/faculties_tech_uni.xlsx")
-print(df.head(3))
+df = pd.read_excel('dataset/dataset_tables/private/chargingCyclesHuge.xlsx')
 
-# Group the DataFrame by 'Academic Year'
-grouped_df = df.groupby('Academic Year')
+# Task 1: Filter the DataFrame for rows where the 'charger_type' column is equal to 'DC_FAST'
+filtered_df = df[df['charger_type (AC/DC/DC_FAST/DC_SUPERCHARGER)'] == 'AC']
 
-# Calculate the average number of male students for each academic year
-avg_male_students = int(grouped_df['Male Students'].mean())
+# Task 2: Count the number of rows in the filtered DataFrame
+frequency_count = filtered_df.shape[0]
 
-# Calculate the average number of female students for each academic year
-avg_female_students = int(grouped_df['Female Students'].mean())
-
-# Create a bar plot
-plt.bar(['Male Students', 'Female Students'], [avg_male_students, avg_female_students], color=['blue', 'yellow'])
-
-# Save the plot
-plt.savefig('plots/faculties_tech_uni799.png')
-
-print("The line plot has been saved successfully.")
+# Task 3: Print the count as the frequency of usage of the 'DC_FAST' charger type
+print("The frequency of usage of the 'DC_FAST' charger type is:", frequency_count)
