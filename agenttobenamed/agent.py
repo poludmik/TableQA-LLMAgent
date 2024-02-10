@@ -20,6 +20,7 @@ class AgentTBN:
                  ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
+        self.prompt_strategy = prompt_strategy
         if table_file_path.endswith('.csv'):
             self.df = pd.read_csv(table_file_path)
         elif table_file_path.endswith('.xlsx'):
@@ -30,7 +31,7 @@ class AgentTBN:
         self.coder_model = coder_model
         self.adapter_path = adapter_path
         self.max_debug_times = max_debug_times
-        self.llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number, prompt_strategy=prompt_strategy)
+        self.llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number, prompt_strategy=self.prompt_strategy)
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')
@@ -64,6 +65,8 @@ class AgentTBN:
                                                                llm=self.coder_model,
                                                                adapter_path=self.adapter_path)
         code_to_execute = Code.extract_code(generated_code, provider=provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
+        if self.prompt_strategy == "functions":
+            code_to_execute = code_to_execute + "\n\n" + "print(solve(df))"
         details["first_generated_code"] = code_to_execute
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=tagged_query_type)

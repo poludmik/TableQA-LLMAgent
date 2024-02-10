@@ -177,6 +177,7 @@ Remember to focus on explaining the steps rather than writing code.
 Do not include any visualization steps, such as plots or charts. 
 You must only output these steps; the code generation assistant will follow them to implement the solution. 
 Finally, you must specify the precise value that the function should return.
+Preferably, also state the Python data type of the result (e.g. float, DataFrame, list, string, etc.).
 
 Here are examples for your inspiration:
 
@@ -254,7 +255,7 @@ The DataFrame `df` has already been defined and populated with the required data
 The result of `print(df.head({head_number}))` is:
 {df_head}
 
-Return the python function `def solve(df):` that accomplishes the following tasks and returns the result of the analysis if needed:
+Return the definition of a python function called `def solve(df):` that accomplishes the following tasks and returns the result of the analysis if needed:
 {plan}
 
 Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
@@ -262,6 +263,7 @@ Strictly follow to the prescribed instructions to avoid oversights and ensure an
 You must include the neccessery import statements at the top of the code.
 You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
+Do not test the function, only define it, like in the following examples:
 
 Here are examples of the output format:
 
@@ -314,7 +316,7 @@ The DataFrame `df` has already been defined and populated with the required data
 The result of `print(df.head({head_number}))` is:
 {df_head}
 
-Return the python function `def solve(df):` that accomplishes the following tasks:
+Return the definition of a python function called `def solve(df):` that accomplishes the following tasks:
 {plan}
 
 Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
@@ -323,6 +325,7 @@ You must include the neccessery import statements at the top of the code.
 You must not include `plt.show()`. Just save the plot the way it is stated in the tasks.
 You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
+Do not test the function, only define it, like in the following examples:
 
 Here is an example of the output format:
 ```python
