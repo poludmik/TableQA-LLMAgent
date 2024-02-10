@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
+
+
 @dataclass
-class Prompts:
+class PromptsSimple:
 
     generate_steps_for_plot_save = """You are an AI data analyst and your job is to assist the user with simple data analysis.
 The user asked the following question: '{input}'.
@@ -32,7 +34,7 @@ Formulate your response as an algorithm, breaking the solution into steps, inclu
 such as names of dataframe columns. Make sure to state showing the plot in the last step.
 
 This algorithm will be later used to write a Python code and applied to the existing pandas DataFrame `df`. 
-The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beggining of the 'df': 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
 {df_head}
 
 Present your algorithm in up to six simple, clear English steps. 
@@ -54,7 +56,7 @@ Formulate your response as an algorithm, breaking the solution into steps, inclu
 such as names of dataframe columns.
 
 This algorithm will be later used to write a Python code and applied to the existing pandas DataFrame 'df'. 
-The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beggining of the 'df': 
+The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
 {df_head}
 
 Present your algorithm with at most six simple, clear English steps. 
@@ -135,3 +137,190 @@ Use the same format with backticks. Example of the output format:
 ```python
 
 ```"""
+
+
+############### Prompts for unit testing coder LLM ###############:
+
+    generate_steps_with_return_no_plot = """You are an AI data analyst and your job is to assist the user with simple data analysis.
+The user asked the following question: '{input}'.
+
+Formulate your response as an algorithm, breaking the solution into steps, including values necessary to answer the question, such as values to search for, and, most importantly, names of dataframe columns.
+
+This algorithm will be later used to write a Python function which takes an existing pandas DataFrame 'df' as an argument and returns the result of the analysis. 
+The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it. Here's how the beginning of the 'df' looks: 
+{df_head}
+
+
+Present your algorithm in no more than six simple, clear English steps. 
+Remember to focus on explaining the steps rather than writing code. 
+Do not include any visualization steps, such as plots or charts. 
+You must only output these steps; the code generation assistant will follow them to implement the solution. 
+Finally, you must specify the precise value that the function should return.
+
+Here are examples for your inspiration:
+
+User question: 'What is the maximal voltage minus the minimal speed, but raised to the power of 3?'
+Your output:
+1. Find and store the minimal value in the 'Speed' column.
+2. Find and store the maximal value in the 'Voltage' column.
+3. Subtract the minimal speed from the maximal voltage.
+4. Raise the result to the power of 3.
+5. Return the resulting number.
+
+User question: 'Find four car ids with the largest mileage'
+Your output:
+1. Sort the DataFrame `df` in descending order based on the 'Mileage' column.
+2. Extract the first 4 rows from the sorted DataFrame.
+3. Make a list of the 'car_id' column from the extracted dataframe.
+4. Return the list of car ids.
+"""
+
+
+    generate_steps_with_return_for_plot_save = """You are an AI data analyst and your job is to assist the user with simple data analysis.
+The user asked the following question: '{input}'.
+
+Formulate your response as an algorithm, breaking the solution into steps, including values necessary to answer the question, such as values to search for and, most importantly, names of dataframe columns.
+Make sure to state saving the plot to '{plotname}' in the last step. Do not include showing the plot to the user interractively; only save it to the '{plotname}'.
+
+This algorithm will be later used to write a Python code and applied to the existing pandas DataFrame `df`. 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
+{df_head}
+
+Present your algorithm in no more than six simple, clear English steps. 
+Remember to focus on explaining the steps rather than writing code. 
+You must only output these steps; the code generation assistant will follow them to implement the solution.
+
+Here's an example for you:
+
+User question: 'Create a bar plot of worst acceleration cars with voltage on the x axis and speed multiplied by 3 on the y axis'
+Your output:
+1. Sort the DataFrame `df` in descending order based on the 'Acceleration' column.
+2. Extract the first 5 rows from the sorted DataFrame.
+3. Multiply each 'Speed' value in the extracted dataframe by 3.
+4. Create a bar plot with 'Voltage' on the x axis and multiplied 'Speed' on the y axis.
+5. Save the bar plot to 'plots/example_plot00.png'.
+"""
+
+    generate_steps_with_return_for_plot_show = """You are an AI data analyst and your job is to assist the user with simple data analysis.
+The user asked the following question: '{input}'.
+
+Formulate your response as an algorithm, breaking the solution into steps, including values necessary to answer the question, such as values to search for and, most importantly, names of dataframe columns.
+Make sure to state showing the plot in the last step.
+
+This algorithm will be later used to write a Python code and applied to the existing pandas DataFrame `df`. 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
+{df_head}
+
+Present your algorithm in up to six simple, clear English steps. 
+Remember to explain steps rather than to write code.
+You must output only these steps, the code generation assistant is going to follow them.
+
+Here's an example for your inspiration:
+User question: 'Create a bar plot of worst acceleration cars with voltage on the x axis and speed multiplied by 3 on the y axis'
+Your output:
+1. Sort the DataFrame `df` in descending order based on the 'Acceleration' column.
+2. Extract the first 5 rows from the sorted DataFrame.
+3. Multiply each 'Speed' value in the extracted dataframe by 3.
+4. Create a bar plot with 'Voltage' on the x axis and multiplied 'Speed' on the y axis.
+5. Show the plot.
+"""
+
+    generate_code_with_return = """You are really good with Python and the pandas library. The user provided a query that you need to help achieving: '{input}'. 
+You also have a list of subtasks to be accomplished.
+
+You have been presented with a pandas dataframe named `df`.
+The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
+The result of `print(df.head({head_number}))` is:
+{df_head}
+
+Return the python function `def solve(df):` that accomplishes the following tasks and returns the result of the analysis if needed:
+{plan}
+
+Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
+Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
+You must include the neccessery import statements at the top of the code.
+You must include print statements to output the final result of your code.
+You must use the backticks to enclose the code.
+
+Here are examples of the output format:
+
+Example 1:
+```python
+import pandas as pd
+
+def solve(df):
+    # 1. Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
+    <CODE>
+    
+    # 2. Extract the 5 rows from the sorted DataFrame.
+    <CODE>
+    
+    # 3. Create a list of the 'Country' column from the extracted dataframe.
+    <CODE>
+    
+    # 4. Return the list of countries.
+    return <RESULT>
+```
+
+Example 2:
+```python
+import pandas as pd
+import random
+
+def solve(df):
+    # 1. Find and store the minimal value in the 'Speed' column.
+    <CODE>
+    
+    # 2. Find and store the maximal value in the 'Voltage' column.
+    <CODE>
+    
+    # 3. Subtract the minimal speed from the maximal voltage.
+    <CODE>
+    
+    # 4. Raise the result to the random power.
+    <CODE>
+    
+    # 5. Return the resulting number.
+    return <RESULT>
+```
+"""
+
+    generate_code_with_return_for_plot_save = """You are really good with Python and the pandas library. The user provided a query that you need to help achieving: '{input}'. 
+You also have a list of subtasks to be accomplished.
+
+You have been presented with a pandas dataframe named `df`.
+The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
+The result of `print(df.head({head_number}))` is:
+{df_head}
+
+Return the python function `def solve(df):` that accomplishes the following tasks:
+{plan}
+
+Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
+Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
+You must include the neccessery import statements at the top of the code.
+You must not include `plt.show()`. Just save the plot the way it is stated in the tasks.
+You must include print statements to output the final result of your code.
+You must use the backticks to enclose the code.
+
+Here is an example of the output format:
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def solve(df):
+    # 1. Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
+    <CODE>
+    
+    # 2. Extract the 5 rows from the sorted DataFrame.
+    <CODE>
+    
+    # 3. Create a pie plot of the 'GDP' column of the extracted dataframe.
+    <CODE>
+    
+    # 4. Save the pie plot to 'plots/example_plot00.png'.
+    <CODE>
+```
+"""
+
+
