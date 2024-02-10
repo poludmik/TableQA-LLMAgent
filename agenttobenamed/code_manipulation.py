@@ -47,7 +47,7 @@ class Code:
                 response = "```python\n" + response + "\n```"
             code_segments = re.findall(r'```python\s*(.*?)\s*```', response, re.DOTALL)
         # Use a regular expression to find all code segments enclosed in triple backticks with or without "python"
-        print("code_segments:", code_segments)
+        # print("code_segments:", code_segments)
         # code_segments = re.findall(r'```(?:python\s*)?(.*?)\s*```', response, re.DOTALL)
         if not code_segments:
             code_segments = re.findall(r'\[PYTHON\](.*?)\[/PYTHON\]', response, re.DOTALL)
@@ -101,7 +101,6 @@ class Code:
     def execute_generated_code(code_str: str, df: pd.DataFrame, tagged_query_type):
         try:
             print(f"{BLUE}EXECUTING THE CODE{RESET}:")
-            results = ""
             for i in [1, 2]:
                 with redirect_stdout(io.StringIO()) as output:
                     exec(code_str, {'df': df})
@@ -115,7 +114,7 @@ class Code:
             output.seek(0)
             print(f"{YELLOW}   FINISHED EXECUTING, RESULTS{MAGENTA}:\n     {results}{RESET}\n")
             return results, None
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, tb = sys.exc_info()
             full_traceback = traceback.format_exc()
             # Filter the traceback

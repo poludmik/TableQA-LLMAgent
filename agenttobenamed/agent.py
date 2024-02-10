@@ -9,9 +9,15 @@ from .llms import LLM
 from .code_manipulation import Code
 from .logger import *
 
-
 class AgentTBN:
-    def __init__(self, table_file_path: str, max_debug_times: int = 2, gpt_model="gpt-3.5-turbo-1106", coder_model="gpt", adapter_path="", head_number=2):
+    def __init__(self, table_file_path: str,
+                 max_debug_times: int = 2,
+                 gpt_model="gpt-3.5-turbo-1106",
+                 coder_model="gpt",
+                 adapter_path="",
+                 head_number=2,
+                 prompt_strategy="simple"
+                 ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
         if table_file_path.endswith('.csv'):
@@ -24,7 +30,7 @@ class AgentTBN:
         self.coder_model = coder_model
         self.adapter_path = adapter_path
         self.max_debug_times = max_debug_times
-        self.llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number)
+        self.llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number, prompt_strategy=prompt_strategy)
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')

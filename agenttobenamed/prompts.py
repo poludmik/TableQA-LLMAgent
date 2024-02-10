@@ -1,8 +1,6 @@
-from dataclasses import dataclass
+# from dataclasses import dataclass
+from .logger import *
 
-
-
-@dataclass
 class PromptsSimple:
 
     generate_steps_for_plot_save = """You are an AI data analyst and your job is to assist the user with simple data analysis.
@@ -92,7 +90,8 @@ You must use the backticks to enclose the code.
 Example of the output format:
 ```python
 
-```"""
+```
+"""
 
     generate_code_for_plot_save = """The user provided a query that you need to help achieving: '{input}'. 
 You also have a list of subtasks to be accomplished using Python.
@@ -115,7 +114,8 @@ You must use the backticks to enclose the code.
 Example of the output format:
 ```python
 
-```"""
+```
+"""
 
     fix_code = """You are a helpful assistant that corrects the python code that resulted in an error and returns the corrected code.
 
@@ -136,12 +136,33 @@ Always include the import statements at the top of the code, and comments and pr
 Use the same format with backticks. Example of the output format:
 ```python
 
-```"""
+```
+"""
+
+    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query):
+        return self.generate_steps_no_plot.format(df_head=df.head(head_number), input=user_query)
+
+    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name):
+        return self.generate_steps_for_plot_save.format(input=user_query, plotname=save_plot_name, df_head=df.head(head_number))
+
+    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query):
+        return self.generate_steps_for_plot_show.format(input=user_query, df_head=df.head(head_number))
+
+    def format_generate_code_prompt(self, head_number, df, user_query, plan):
+        return self.generate_code.format(input=user_query, df_head=df.head(head_number), plan=plan, head_number=head_number)
+
+    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan):
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan, head_number=head_number)
+
+    def format_fix_code_prompt(self, head_number, df, user_query, code_to_be_fixed, error_message):
+        return self.fix_code.format(code=code_to_be_fixed, df_head=df.head(head_number), error=error_message, input=user_query, head_number=head_number)
+
 
 
 ############### Prompts for unit testing coder LLM ###############:
+class PromptsForFunctionGeneration:
 
-    generate_steps_with_return_no_plot = """You are an AI data analyst and your job is to assist the user with simple data analysis.
+    generate_steps_no_plot = """You are an AI data analyst and your job is to assist the user with simple data analysis.
 The user asked the following question: '{input}'.
 
 Formulate your response as an algorithm, breaking the solution into steps, including values necessary to answer the question, such as values to search for, and, most importantly, names of dataframe columns.
@@ -176,7 +197,7 @@ Your output:
 """
 
 
-    generate_steps_with_return_for_plot_save = """You are an AI data analyst and your job is to assist the user with simple data analysis.
+    generate_steps_for_plot_save = """You are an AI data analyst and your job is to assist the user with simple data analysis.
 The user asked the following question: '{input}'.
 
 Formulate your response as an algorithm, breaking the solution into steps, including values necessary to answer the question, such as values to search for and, most importantly, names of dataframe columns.
@@ -201,7 +222,7 @@ Your output:
 5. Save the bar plot to 'plots/example_plot00.png'.
 """
 
-    generate_steps_with_return_for_plot_show = """You are an AI data analyst and your job is to assist the user with simple data analysis.
+    generate_steps_for_plot_show = """You are an AI data analyst and your job is to assist the user with simple data analysis.
 The user asked the following question: '{input}'.
 
 Formulate your response as an algorithm, breaking the solution into steps, including values necessary to answer the question, such as values to search for and, most importantly, names of dataframe columns.
@@ -225,7 +246,7 @@ Your output:
 5. Show the plot.
 """
 
-    generate_code_with_return = """You are really good with Python and the pandas library. The user provided a query that you need to help achieving: '{input}'. 
+    generate_code = """You are really good with Python and the pandas library. The user provided a query that you need to help achieving: '{input}'. 
 You also have a list of subtasks to be accomplished.
 
 You have been presented with a pandas dataframe named `df`.
@@ -285,7 +306,7 @@ def solve(df):
 ```
 """
 
-    generate_code_with_return_for_plot_save = """You are really good with Python and the pandas library. The user provided a query that you need to help achieving: '{input}'. 
+    generate_code_for_plot_save = """You are really good with Python and the pandas library. The user provided a query that you need to help achieving: '{input}'. 
 You also have a list of subtasks to be accomplished.
 
 You have been presented with a pandas dataframe named `df`.
@@ -323,4 +344,50 @@ def solve(df):
 ```
 """
 
+    # Here, same as in SimplePrompts, but later could, for example, add column description prompts and methods would be different maybe
+    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query):
+        return self.generate_steps_no_plot.format(df_head=df.head(head_number), input=user_query)
+
+    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name):
+        return self.generate_steps_for_plot_save.format(input=user_query, plotname=save_plot_name,
+                                                        df_head=df.head(head_number))
+
+    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query):
+        return self.generate_steps_for_plot_show.format(input=user_query, df_head=df.head(head_number))
+
+    def format_generate_code_prompt(self, head_number, df, user_query, plan):
+        return self.generate_code.format(input=user_query, df_head=df.head(head_number), plan=plan,
+                                         head_number=head_number)
+
+    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan):
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan,
+                                                       head_number=head_number)
+
+
+class Prompts:
+    def __init__(self, str_strategy: PromptsSimple | PromptsForFunctionGeneration):
+        if str_strategy == "functions":
+            self.strategy = PromptsForFunctionGeneration()
+        elif str_strategy == "simple":
+            self.strategy = PromptsSimple()
+        else:
+            raise Exception(f"{RED}Unknown prompt strategy!{RESET}")
+
+    def generate_steps_no_plot_prompt(self, head_number, df, user_query):
+        return self.strategy.format_generate_steps_no_plot_prompt(head_number, df, user_query)
+
+    def generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name):
+        return self.strategy.format_generate_steps_for_plot_save_prompt(head_number, df, user_query, save_plot_name)
+
+    def generate_steps_for_plot_show_prompt(self, head_number, df, user_query):
+        return self.strategy.format_generate_steps_for_plot_show_prompt(head_number, df, user_query)
+
+    def generate_code_prompt(self, head_number, df, user_query, plan):
+        return self.strategy.format_generate_code_prompt(head_number, df, user_query, plan)
+
+    def generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan):
+        return self.strategy.format_generate_code_for_plot_save_prompt(head_number, df, user_query, plan)
+
+    def fix_code_prompt(self, head_number, df, user_query, code_to_be_fixed, error_message):
+        return PromptsSimple().format_fix_code_prompt(head_number, df, user_query, code_to_be_fixed, error_message)
 

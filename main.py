@@ -9,9 +9,11 @@ start_time = time.time()
 csv_path = "csvs/test_CSV_file_gdp.csv"
 agent = AgentTBN(csv_path,
                  max_debug_times=2,
-                 gpt_model="gpt-4-1106-preview",
+                 gpt_model="gpt-3.5-turbo-1106",
                  head_number=1,
-                 coder_model="codellama/CodeLlama-7b-Instruct-hf"
+                 prompt_strategy="simple",
+                 # coder_model="codellama/CodeLlama-7b-Instruct-hf"
+                 coder_model="gpt"
                  )  # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
 
 
@@ -19,8 +21,8 @@ agent = AgentTBN(csv_path,
 # query = "the correlation between current and voltage"
 # query = "minimal value of rate of happy"
 # query = "Find top 10 largest charging cycles and pieplot them. Add values. Use red color for the biggest one. Add shadow. Title it 'Ch. Cycles'."
-# query = "Find the correlation between gdp and happiness index."
-query = "Create a barplot of the top 5 minimal values in the happiness index column."
+query = "Find the correlation between gdp and happiness index."
+# query = "Create a barplot of the top 5 minimal values in the happiness index column."
 # query = "Pie plot top 11 accelerations"
 # query = "What are 3 best accelerations?"
 # query = "print the whole dataframe"
@@ -31,7 +33,10 @@ query = "Create a barplot of the top 5 minimal values in the happiness index col
 # query = "average depth in the 'Plot' column" # Tags as 'general' text answer!!!
 
 # result, details_dict = agent.answer_query(query, show_plot=False, save_plot_path="plots/kek2.png")
-result, details_dict = agent.answer_query(query, show_plot=True, save_plot_path="plots/Energy Throughput divided by DoD.png")
+result, details_dict = agent.answer_query(query,
+                                          show_plot=False,
+                                          save_plot_path="plots/Energy Throughput divided by DoD.png",
+                                          )
 
 print("Returned result:", result)
 
