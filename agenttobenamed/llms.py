@@ -180,7 +180,7 @@ class LLM:
         if query_type == "plot":
             selected_prompt = temlate_for_plot_planner
 
-        print(selected_prompt)
+        # print(selected_prompt)
 
         return self._call_openai_llm(selected_prompt, role=Role.PLANNER), (selected_prompt, query_type)
 

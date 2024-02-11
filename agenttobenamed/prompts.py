@@ -177,7 +177,7 @@ Remember to focus on explaining the steps rather than writing code.
 Do not include any visualization steps, such as plots or charts. 
 You must only output these steps; the code generation assistant will follow them to implement the solution. 
 Finally, you must specify the precise value that the function should return.
-Preferably, also state the Python data type of the result (e.g. float, DataFrame, list, string, etc.).
+Preferably, also state the Python data type of the result (e.g. float, DataFrame, list, string, dict, etc.).
 
 Here are examples for your inspiration:
 

@@ -31,10 +31,32 @@ class AgentTBN:
         self.coder_model = coder_model
         self.adapter_path = adapter_path
         self.max_debug_times = max_debug_times
+
+        # To skip the reasoning part for one run:
+        self._plan = None
+        self._tagged_query_type = None
+        self._prompt_user_for_planner = None
+
+        self.provider = "openai"
+        if self.coder_model != "gpt":
+            self.provider = "local"
+
         self.llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number, prompt_strategy=self.prompt_strategy)
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')
+
+    def skip_reasoning_part(self, plan: str, tagged_query_type: str, prompt_user_for_planner: str):
+        self._plan = plan
+        self._tagged_query_type = tagged_query_type
+        self._prompt_user_for_planner = prompt_user_for_planner
+        if isinstance(self._plan, str) != isinstance(self._tagged_query_type, str):
+            raise Exception("Both plan and tagged_query_type must be either None or a string.")
+
+    def _reset_skip_reasoning_part(self):
+        self._plan = None
+        self._tagged_query_type = None
+        self._prompt_user_for_planner = None
 
     def answer_query(self, query: str, show_plot=False, save_plot_path=None):
         """
@@ -46,30 +68,28 @@ class AgentTBN:
         details = {}
 
         possible_plotname = None
-        if not show_plot: # No need to plt.show()
-            if save_plot_path is None: # Save plot to a random filepath
-                possible_plotname = "plots/" + os.path.splitext(os.path.basename(self.filename))[0] + str(random.randint(10, 99)) + ".png"
-            else: # Save plot to a provided filepath
+        if not show_plot:  # No need to plt.show()
+            if save_plot_path is None:  # Save plot to a random filepath
+                possible_plotname = "plots/" + os.path.splitext(os.path.basename(self.filename))[0] + str(
+                    random.randint(10, 99)) + ".png"
+            else:  # Save plot to a provided filepath
                 possible_plotname = save_plot_path
 
-        provider = "openai"
-        if self.coder_model != "gpt":
-            provider = "local"
+        if self._plan is None: # Not skipping the reasoning part
+            self._plan, (self._prompt_user_for_planner, self._tagged_query_type) = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
 
-        plan, planner_prompt = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
-        tagged_query_type = planner_prompt[1]
-
-        generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, plan,
+        generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, self._plan,
                                                                show_plot=show_plot,
-                                                               tagged_query_type=tagged_query_type,
+                                                               tagged_query_type=self._tagged_query_type,
                                                                llm=self.coder_model,
                                                                adapter_path=self.adapter_path)
-        code_to_execute = Code.extract_code(generated_code, provider=provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
+
+        code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         if self.prompt_strategy == "functions":
             code_to_execute = code_to_execute + "\n\n" + "print(solve(df))"
         details["first_generated_code"] = code_to_execute
 
-        res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=tagged_query_type)
+        res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=self._tagged_query_type)
         debug_prompt = ""
 
         count = 0
@@ -82,12 +102,12 @@ class AgentTBN:
         while res == "ERROR" and count < self.max_debug_times:
             errors.append(exception)
             regenerated_code, debug_prompt = self.llm_calls.fix_generated_code(self.df, code_to_execute, exception, query)
-            code_to_execute = Code.extract_code(regenerated_code, provider=provider)
-            res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type)
+            code_to_execute = Code.extract_code(regenerated_code, provider=self.provider)
+            res, exception = Code.execute_generated_code(code_to_execute, self.df, self._tagged_query_type)
             count += 1
         errors = errors + exception if res == "ERROR" or not code_to_execute.strip() else []
 
-        if res == "" and tagged_query_type == "general":
+        if res == "" and self._tagged_query_type == "general":
             print(f"{RED}Empty output from exec() with the text-intended answer!{RESET}")
 
 
@@ -96,23 +116,25 @@ class AgentTBN:
         plt.cla()
         plt.close()
 
-        details["plan"] = plan
+        details["plan"] = self._plan
         details["coder_prompt"] = coder_prompt
-        details["prompt_user_for_planner"] = planner_prompt[0]
-        details["tagged_query_type"] = tagged_query_type
+        details["prompt_user_for_planner"] = self._prompt_user_for_planner
+        details["tagged_query_type"] = self._tagged_query_type
         details["count_of_fixing_errors"] = str(count)
         details["final_generated_code"] = code_to_execute
         details["last_debug_prompt"] = debug_prompt
         details["successful_code_execution"] = "True" if res != "ERROR" else "False"
         details["result_repl_stdout"] = res
-        details["plot_filename"] = possible_plotname if tagged_query_type == "plot" else ""
+        details["plot_filename"] = possible_plotname if self._tagged_query_type == "plot" else ""
         details["code_errors"] = '\n'.join([f"{index}. \"{item}\"" for index, item in enumerate(errors)])
 
         ret_value = res
         if res == "":
-            if tagged_query_type == "general":
+            if self._tagged_query_type == "general":
                 ret_value = "Empty output from the exec() function for the text-intended answer."
-            elif tagged_query_type == "plot":
+            elif self._tagged_query_type == "plot":
                 ret_value = possible_plotname
+
+        self._reset_skip_reasoning_part()
 
         return ret_value, details

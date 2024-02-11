@@ -5,3 +5,7 @@ outputs/
 dataset/private/
 evaluation/conf/config_collect_private.yaml
 evaluation/results_private/
+evaluation/results_private_functions/
+evaluation/results_private_functions_skip_reasoning/
+evaluation/conf/config_collect_functions.yaml
+evaluation/conf/config_collect_skip_reasoning.yaml
