@@ -263,7 +263,7 @@ Strictly follow to the prescribed instructions to avoid oversights and ensure an
 You must include the neccessery import statements at the top of the code.
 You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
-Do not test the function, only define it, like in the following examples:
+Do not test the function with anything similar to `print(solve(df))`, only define the function, like in the following examples:
 
 Here are examples of the output format:
 
@@ -325,7 +325,7 @@ You must include the neccessery import statements at the top of the code.
 You must not include `plt.show()`. Just save the plot the way it is stated in the tasks.
 You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
-Do not test the function, only define it, like in the following examples:
+Do not test the function with anything similar to `print(solve(df))`, only define the function, like in the following examples:
 
 Here is an example of the output format:
 ```python

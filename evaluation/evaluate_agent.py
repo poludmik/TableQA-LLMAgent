@@ -44,7 +44,6 @@ I'll tip you 10 dollars if you get it right.
 
 def compare_with_base_answer(gpt_model: str, user_query: str, base_answer: str, agent_answer: str):
     prompt_in = prompt_template.format(user_query=user_query, answer=agent_answer, correct_answer=base_answer)
-    # print(prompt_in)
     chat_model = ChatOpenAI(model=gpt_model)
     messages = [HumanMessage(content=prompt_in)]
     res = chat_model.invoke(messages).content
@@ -56,7 +55,11 @@ def compare_with_base_answer(gpt_model: str, user_query: str, base_answer: str, 
     return res
 
 
-def main(gpt_model: str, correct_answers_xlsx: str, agent_answers_xlsx: str):
+def compare_answers_as_strings(base_answer: str, agent_answer: str):
+    return 1 if base_answer.strip() == agent_answer.strip() else 0
+
+
+def main(precise: bool, gpt_model: str, correct_answers_xlsx: str, agent_answers_xlsx: str):
     correct_answers_df = pd.read_excel(correct_answers_xlsx).astype(str)
     agent_answers_df = pd.read_excel(agent_answers_xlsx).astype(str)
 
@@ -67,7 +70,10 @@ def main(gpt_model: str, correct_answers_xlsx: str, agent_answers_xlsx: str):
 
         correct_answer = row["result_repl_stdout"]
         agent_answer = agent_answers_df.loc[index, "result_repl_stdout"]
-        score = compare_with_base_answer(gpt_model, row["user_query"], correct_answer, agent_answer)
+        if precise:
+            score = compare_answers_as_strings(correct_answer, agent_answer)
+        else:
+            score = compare_with_base_answer(gpt_model, row["user_query"], correct_answer, agent_answer)
 
         scores.append(score)
         print(f"Index: {index}, score: {score}")
@@ -79,19 +85,13 @@ def main(gpt_model: str, correct_answers_xlsx: str, agent_answers_xlsx: str):
 
 
 if __name__ == "__main__":
-
     # Create arguments with argparse: gpt_model, correct_answers_xlsx, agent_answers_xlsx
     parser = argparse.ArgumentParser()
-    parser.add_argument("--gpt_model", type=str, default="gpt-4")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--gpt_model", type=str, default="gpt-4-0125-preview", help="Specify the GPT model to use.")
+    group.add_argument("--precise", action='store_true', help="Enable precise mode. Mutually exclusive with --gpt_model.")
     parser.add_argument("--correct_answers_xlsx", type=str, default="dataset/dataset_82.xlsx")
     parser.add_argument("--agent_answers_xlsx", type=str, default="evaluation/results/filled_dataset.xlsx")
     args = parser.parse_args()
 
-    main(gpt_model=args.gpt_model, correct_answers_xlsx=args.correct_answers_xlsx, agent_answers_xlsx=args.agent_answers_xlsx)
-
-
-    # question = "Calculate the average resistance and capacitance across all components."
-    # correct_ans = "10.0010174989971292\n 0.0004420966120445209"
-    # agent_ans = "Average resistance: 10\n Average capacitance: 0."
-    #
-    # print(compare_with_base_answer("gpt-4", question, correct_ans, agent_ans))
+    main(precise=args.precise, gpt_model=args.gpt_model, correct_answers_xlsx=args.correct_answers_xlsx, agent_answers_xlsx=args.agent_answers_xlsx)
