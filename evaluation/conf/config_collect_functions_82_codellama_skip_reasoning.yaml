@@ -1,0 +1,12 @@
+params:
+  tables_dataset_dir: dataset/dataset_tables/
+  excel: dataset/dataset_82_gpt35_functions.xlsx
+  max_debug_times: 1
+  reasoning_llm: gpt-3.5-turbo-1106
+  coding_llm: codellama/CodeLlama-7b-Instruct-hf
+  head_number: 2
+  output_dir: evaluation/results_functions_skip_reasoning_82_codellama/
+  output_filename: filled_functions_skip_reasoning_82_codellama.xlsx
+  adapter_path: ""
+  propmt_strategy: functions # "functions" or "simple"
+  skip_reasoning: True

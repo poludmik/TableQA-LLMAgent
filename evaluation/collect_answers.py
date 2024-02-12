@@ -6,7 +6,7 @@ import random
 import hydra
 
 
-@hydra.main(config_path="conf", config_name="config_collect_skip_reasoning.yaml", version_base="1.1")
+@hydra.main(config_path="conf", config_name="config_collect_functions_82_codellama_skip_reasoning.yaml", version_base="1.1")
 def main(cfg):
     output_dir = cfg.params.output_dir
     tables_dataset_dir = cfg.params.tables_dataset_dir

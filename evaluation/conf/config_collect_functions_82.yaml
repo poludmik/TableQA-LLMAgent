@@ -1,0 +1,12 @@
+params:
+  output_dir: evaluation/results_functions_82_dataset/
+  tables_dataset_dir: dataset/dataset_tables/
+  excel: dataset/dataset_clean.xlsx
+  max_debug_times: 1
+  reasoning_llm: gpt-3.5-turbo-1106
+  coding_llm: gpt # same as reasoning_llm
+  head_number: 2
+  output_filename: filled_82_gpt35_functions.xlsx
+  adapter_path: ""
+  propmt_strategy: functions # "functions" or "simple"
+  skip_reasoning: False
