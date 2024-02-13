@@ -1,0 +1,74 @@
+Basic DataFrame Operations
+
+Find maximum value in a particular column: df["column"].max()
+Find minimum value in a particular column: df["column"].min()
+Calculate the mean of a column: df["column"].mean()
+Calculate median of a column: df["column"].median()
+Sum values of a column: df["column"].sum()
+Count non-NA/null values of a column: df["column"].count()
+Calculate standard deviation of a column: df["column"].std()
+Find unique values in a column: df["column"].unique()
+Calculate number of unique values: df["column"].nunique()
+Calculate the correlation between two columns: df[["column1", "column2"]].corr()
+Filter rows based on condition: df[df["column"] > value]
+Select a subset of columns: df[["column1", "column2"]]
+Drop rows with any missing values: df.dropna()
+Fill missing values with a specific value: df.fillna(value)
+Convert data type of a column: df["column"].astype(dtype)
+Sort DataFrame by a column: df.sort_values(by="column", ascending=True)
+Reset DataFrame index: df.reset_index(drop=True)
+Set a column as index: df.set_index("column")
+Rename columns: df.rename(columns={'old_name': 'new_name'})
+Drop a column: df.drop(columns=["column"])
+
+
+Data Aggregation & Grouping
+
+Group by a column and calculate sum: df.groupby("column").sum()
+Group by a column and calculate mean: df.groupby("column").mean()
+Aggregate multiple statistics at once: df.agg({"column1": ["sum", "min"], "column2": ["max", "mean"]})
+Pivot tables for data summarization: df.pivot_table(values="value_column", index="row_column", columns="column_column", aggfunc="mean")
+
+
+Time Series
+
+Convert a column to datetime: pd.to_datetime(df["column"])
+Set a datetime column as index: df.set_index(pd.to_datetime(df["column"]))
+Calculate rolling average: df["column"].rolling(window=3).mean()
+Resample time series data: df.resample("D").mean() (D for daily)
+Shift or lag values: df["column"].shift(periods=1)
+
+Data Visualization
+
+Line plot of a column: df["column"].plot(kind="line")
+Bar plot of value counts: df["column"].value_counts().plot(kind="bar")
+Histogram of a column: df["column"].plot(kind="hist")
+Box plot for distribution analysis: df.boxplot(column=["column1", "column2"])
+Scatter plot between two columns: df.plot.scatter(x="column1", y="column2")
+Plotting using Seaborn for more attractive visualizations: sns.lineplot(data=df, x="column1", y="column2")
+
+
+Data Import/Export
+
+Read CSV file into DataFrame: pd.read_csv("file_path.csv")
+Write DataFrame to CSV file: df.to_csv("file_path.csv", index=False)
+Read Excel file into DataFrame: pd.read_excel("file_path.xlsx")
+Write DataFrame to Excel file: df.to_excel("file_path.xlsx", index=False)
+Read SQL query into DataFrame: pd.read_sql_query("SELECT * FROM table", connection)
+
+
+Advanced Data Manipulation
+
+Merge two DataFrames on a key: pd.merge(df1, df2, on="key")
+Concatenate DataFrames vertically: pd.concat([df1, df2], axis=0)
+Concatenate DataFrames horizontally: pd.concat([df1, df2], axis=1)
+Apply a custom function to DataFrame column: df["column"].apply(lambda x: custom_function(x))
+Use query method for filtering: df.query("column > value")
+Pandas melt for transforming DataFrame: pd.melt(df, id_vars=["id_column"], value_vars=["value_column"])
+Use crosstab for cross-tabulation: pd.crosstab(df["column1"], df["column2"])
+Handling categorical data with get_dummies: pd.get_dummies(df["category_column"])
+Time series decomposition: from statsmodels.tsa.seasonal import seasonal_decompose; seasonal_decompose(df["column"], model="additive")
+Calculate percent change for a column: df["column"].pct_change()
+
+
+
