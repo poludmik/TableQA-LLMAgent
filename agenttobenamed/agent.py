@@ -16,11 +16,13 @@ class AgentTBN:
                  coder_model="gpt",
                  adapter_path="",
                  head_number=2,
-                 prompt_strategy="simple"
+                 prompt_strategy="simple",
+                 add_column_description=False,
                  ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
         self.prompt_strategy = prompt_strategy
+        self.add_column_description = add_column_description
         self._table_file_path = table_file_path
         self._df = None
 
@@ -38,7 +40,12 @@ class AgentTBN:
         if self.coder_model != "gpt":
             self.provider = "local"
 
-        self.llm_calls = LLM(use_assistants_api=False, model=self.gpt_model, head_number=self.head_number, prompt_strategy=self.prompt_strategy)
+        self.llm_calls = LLM(use_assistants_api=False,
+                             model=self.gpt_model,
+                             head_number=self.head_number,
+                             prompt_strategy=self.prompt_strategy,
+                             add_column_description=self.add_column_description
+                             )
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')

@@ -7,24 +7,25 @@ import pprint
 start_time = time.time()
 
 # csv_path = "csvs/Car Specs 12.xlsx"
-# csv_path = "csvs/EV_Battery_Data.csv"
-csv_path = "csvs/test_CSV_file_gdp.csv"
+csv_path = "dataset/dataset_tables/random_csvs/EV_Battery_Data.csv"
+# csv_path = "dataset/dataset_tables/random_csvs/test_CSV_file_gdp.csv"
 agent = AgentTBN(csv_path,
                  max_debug_times=2,
                  gpt_model="gpt-3.5-turbo-1106", # "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
-                 head_number=1,
+                 head_number=2,
                  prompt_strategy="functions", # "functions", "simple"
                  # coder_model="codellama/CodeLlama-7b-Instruct-hf"
-                 coder_model="gpt"
+                 coder_model="gpt",
+                 add_column_description=True,
                  )
 
 
 # query = "What is the maximum Temperature?"
-# query = "the correlation between current and voltage"
+query = "the correlation between current and voltage"
 # query = "minimal value of rate of happy"
 # query = "Find top 10 largest charging cycles and pieplot them. Add values. Use red color for the biggest one. Add shadow. Title it 'Ch. Cycles'."
 # query = "Find the correlation between gdp and happiness index."
-query = "Create a boxplot of the top 5 minimal values in the happiness index column."
+# query = "Create a pie plot of the top 5 minimal values in the happiness index column."
 # query = "I want to know the average gdp of countries that have happiness index greater than 5.5. I also need these countries."
 # query = "Can you do statistics about happiness index and gdp relationship? like their max, min and mean"
 # query = "filter out the countries with gdp less than 4380756541439"

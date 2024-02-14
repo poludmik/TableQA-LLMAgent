@@ -21,7 +21,6 @@ from peft import PeftModel
 import time
 from enum import Enum
 
-from .logger import *
 from .prompts import *
 
 
@@ -45,11 +44,17 @@ class Role(Enum):
 
 class LLM:
 
-    def __init__(self, model="gpt-3.5-turbo-1106", use_assistants_api=True, head_number=2, prompt_strategy="simple"):
+    def __init__(self, model="gpt-3.5-turbo-1106",
+                 use_assistants_api=True,
+                 head_number=2,
+                 prompt_strategy="simple",
+                 add_column_description=False
+                 ):
         self.model = model
         self.head_number = head_number
         self.local_coder_model = None
-        self.prompts = Prompts(str_strategy=prompt_strategy)
+        self.add_column_description = add_column_description
+        self.prompts = Prompts(str_strategy=prompt_strategy, head_number=head_number, add_column_description=self.add_column_description)
         if use_assistants_api:
             self._call_openai_llm = self._get_response_from_assistant
             self.client = OpenAI()
@@ -90,10 +95,10 @@ class LLM:
         Select a prompt between the one saving the plot and the one calculating some math.
         """
         print(f"{BLUE}SELECTING A PROMPT:{RESET}")
-        temlate_for_plot_planner = self.prompts.generate_steps_for_plot_show_prompt(self.head_number, df, user_query)
+        temlate_for_plot_planner = self.prompts.generate_steps_for_plot_show_prompt(df, user_query)
         if save_plot_name is not None:
-            temlate_for_plot_planner = self.prompts.generate_steps_for_plot_save_prompt(self.head_number, df, user_query, save_plot_name)
-        temlate_for_math_planner = self.prompts.generate_steps_no_plot_prompt(self.head_number, df, user_query)
+            temlate_for_plot_planner = self.prompts.generate_steps_for_plot_save_prompt(df, user_query, save_plot_name)
+        temlate_for_math_planner = self.prompts.generate_steps_no_plot_prompt(df, user_query)
 
         prompt_branch = RunnableBranch(
             (lambda x: x["topic"] == "plot", PromptTemplate.from_template(temlate_for_plot_planner)),
@@ -171,10 +176,10 @@ class LLM:
     def plan_steps_with_gpt(self, user_query, df, save_plot_name):
         query_type = self.tag_query_type(user_query)
 
-        temlate_for_plot_planner = self.prompts.generate_steps_for_plot_show_prompt(self.head_number, df, user_query)
+        temlate_for_plot_planner = self.prompts.generate_steps_for_plot_show_prompt(df, user_query)
         if save_plot_name is not None:
-            temlate_for_plot_planner = self.prompts.generate_steps_for_plot_save_prompt(self.head_number, df, user_query, save_plot_name)
-        temlate_for_math_planner = self.prompts.generate_steps_no_plot_prompt(self.head_number, df, user_query)
+            temlate_for_plot_planner = self.prompts.generate_steps_for_plot_save_prompt(df, user_query, save_plot_name)
+        temlate_for_math_planner = self.prompts.generate_steps_no_plot_prompt(df, user_query)
 
         selected_prompt = temlate_for_math_planner
         if query_type == "plot":
@@ -185,9 +190,9 @@ class LLM:
         return self._call_openai_llm(selected_prompt, role=Role.PLANNER), (selected_prompt, query_type)
 
     def generate_code(self, user_query, df, plan, show_plot=False, tagged_query_type="general", llm="gpt", adapter_path=""):
-        prompt = self.prompts.generate_code_prompt(self.head_number, df, user_query, plan)
+        prompt = self.prompts.generate_code_prompt(df, user_query, plan)
         if tagged_query_type == "plot" and not show_plot: # don't include plt.show() in the generated code
-            prompt = self.prompts.generate_code_for_plot_save_prompt(self.head_number, df, user_query, plan)
+            prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan)
         if llm == "gpt":
             return self._call_openai_llm(prompt, role=Role.CODER), prompt
         else: # local llm
@@ -241,7 +246,7 @@ class LLM:
             return generate(self.local_coder_model, prompt), prompt
 
     def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
-        prompt = self.prompts.fix_code_prompt(self.head_number, df, user_query, code_to_be_fixed, error_message)
+        prompt = self.prompts.fix_code_prompt(df, user_query, code_to_be_fixed, error_message)
         return self._call_openai_llm(prompt, Role.DEBUGGER), prompt
 
 
