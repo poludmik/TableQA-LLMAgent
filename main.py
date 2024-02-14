@@ -1,3 +1,5 @@
+import pandas as pd
+
 from agenttobenamed import AgentTBN
 import time
 import pprint
@@ -22,9 +24,9 @@ agent = AgentTBN(csv_path,
 # query = "minimal value of rate of happy"
 # query = "Find top 10 largest charging cycles and pieplot them. Add values. Use red color for the biggest one. Add shadow. Title it 'Ch. Cycles'."
 # query = "Find the correlation between gdp and happiness index."
-# query = "Create a barplot of the top 5 minimal values in the happiness index column."
+query = "Create a boxplot of the top 5 minimal values in the happiness index column."
 # query = "I want to know the average gdp of countries that have happiness index greater than 5.5. I also need these countries."
-query = "Can you do statistics about happiness index and gdp relationship? like their max, min and mean"
+# query = "Can you do statistics about happiness index and gdp relationship? like their max, min and mean"
 # query = "filter out the countries with gdp less than 4380756541439"
 # query = "Pie plot top 11 accelerations"
 # query = "What are 3 best accelerations?"

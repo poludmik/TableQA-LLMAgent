@@ -21,12 +21,9 @@ class AgentTBN:
         self.filename = Path(table_file_path).name
         self.head_number = head_number
         self.prompt_strategy = prompt_strategy
-        if table_file_path.endswith('.csv'):
-            self.df = pd.read_csv(table_file_path)
-        elif table_file_path.endswith('.xlsx'):
-            self.df = pd.read_excel(table_file_path)
-        else:
-            raise Exception("Only csvs and xlsx are currently supported.")
+        self._table_file_path = table_file_path
+        self._df = None
+
         self.gpt_model = gpt_model
         self.coder_model = coder_model
         self.adapter_path = adapter_path
@@ -45,6 +42,17 @@ class AgentTBN:
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')
+
+    @property
+    def df(self): # Lazy loading, when df is first accessed.
+        if self._df is None:
+            if self._table_file_path.endswith('.csv'):
+                self._df = pd.read_csv(self._table_file_path)
+            elif self._table_file_path.endswith('.xlsx'):
+                self._df = pd.read_excel(self._table_file_path)
+            else:
+                raise Exception("Only csvs and xlsx are currently supported.")
+        return self._df
 
     def skip_reasoning_part(self, plan: str, tagged_query_type: str, prompt_user_for_planner: str):
         self._plan = plan
