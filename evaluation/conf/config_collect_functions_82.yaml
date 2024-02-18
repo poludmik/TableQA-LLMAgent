@@ -1,12 +1,13 @@
 params:
-  output_dir: evaluation/results_functions_82_dataset/
+  output_dir: evaluation/results_functions_with_columns_250_gpt35/
   tables_dataset_dir: dataset/dataset_tables/
-  excel: dataset/dataset_clean.xlsx
+  excel: dataset/dataset_250_gpt35_82correct_function_answers.xlsx
   max_debug_times: 1
   reasoning_llm: gpt-3.5-turbo-1106
   coding_llm: gpt # same as reasoning_llm
   head_number: 2
-  output_filename: filled_82_gpt35_functions.xlsx
+  output_filename: filled_250_gpt35_functions_with_columns.xlsx
   adapter_path: ""
   propmt_strategy: functions # "functions" or "simple"
   skip_reasoning: False
+  add_column_description: True

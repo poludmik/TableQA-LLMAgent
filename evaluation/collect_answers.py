@@ -6,7 +6,7 @@ import random
 import hydra
 
 
-@hydra.main(config_path="conf", config_name="config_collect_functions_82_codellama_skip_reasoning.yaml", version_base="1.1")
+@hydra.main(config_path="conf", config_name="config_collect_functions_82.yaml", version_base="1.1")
 def main(cfg):
     output_dir = cfg.params.output_dir
     tables_dataset_dir = cfg.params.tables_dataset_dir
@@ -19,6 +19,7 @@ def main(cfg):
     adapter_path = cfg.params.adapter_path
     propmt_strategy = cfg.params.propmt_strategy
     skip_reasoning = cfg.params.skip_reasoning
+    add_column_description = cfg.params.add_column_description
 
     plots_dir = "plots/" # will be in the outputs/ folder (hydra logs), serves as a tmp buffer for plots
 
@@ -58,6 +59,7 @@ def main(cfg):
                                  head_number=head_number,
                                  adapter_path=adapter_path,
                                  prompt_strategy=propmt_strategy,
+                                 add_column_description=add_column_description,
                                  )
 
             if skip_reasoning:
@@ -77,6 +79,8 @@ def main(cfg):
                 dataset_df.loc[index, key] = details[key]
 
             dataset_df.to_excel(save_dataset_path, index=False)
+
+
 
         except Exception as e:
             print("Exception:", e)
