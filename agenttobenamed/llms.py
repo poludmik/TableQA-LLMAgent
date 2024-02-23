@@ -1,11 +1,4 @@
-# from langchain.llms import OpenAI
-import re
-import os
-from os.path import exists, join, isdir
-
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import HumanMessage
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import RunnableBranch, RunnablePassthrough
 from typing import Literal
@@ -14,9 +7,6 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from operator import itemgetter
 from openai import OpenAI
-
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
 
 import time
 from enum import Enum
@@ -46,7 +36,7 @@ class Role(Enum):
 class LLM:
 
     def __init__(self, model="gpt-3.5-turbo-1106",
-                 use_assistants_api=True,
+                 use_assistants_api=False,
                  head_number=2,
                  prompt_strategy="simple",
                  add_column_description=False
@@ -60,10 +50,13 @@ class LLM:
             self._call_openai_llm = self._get_response_from_assistant
             self.client = OpenAI()
             self.my_assistant = self.client.beta.assistants.create(
-                # instructions=init_instructions,
-                name="Helpfull Data Analyst",
-                model=model
+                name="Data Assistant",
+                instructions="""You are a data analyst who can analyse and interpret data files such as CSV and XLSX and can draw conclusions from the data. """ +\
+                """If user asks for a plot or for any other sort of visualization, just return a png file with what he asked for.""", # must state to return a file
+                model=self.model,
+                tools=[{"type": "code_interpreter"}],
             )
+            self.thread = self.client.beta.threads.create()
         else:
             self._call_openai_llm = self._get_response_from_base_gpt
 
@@ -125,7 +118,7 @@ class LLM:
 
     def _get_response_from_base_gpt(self, prompt_in: str, role: Role = Role.PLANNER):
         print(f"{BLUE}STARTING LANGCHAIN.LLM{RESET}: {YELLOW}{str(role)}{RESET}")
-        chat_model = ChatOpenAI(model=self.model)
+        chat_model = ChatOpenAI(model=self.model, temperature=0)
         messages = [HumanMessage(content=prompt_in)]
         res = chat_model.invoke(messages).content
         print(f"{BLUE}LANGCHAIN.LLM MESSAGE{RESET}: {res}")
@@ -216,3 +209,85 @@ class LLM:
         prompt = self.prompts.fix_code_prompt(df, user_query, code_to_be_fixed, error_message)
         return self._call_openai_llm(prompt, Role.DEBUGGER), prompt
 
+    def pure_openai_assistant_answer(self, df_filename, user_query, possible_plotname=None):
+        def wait_on_run(run_local, thread_local):
+            while run_local.status == "queued" or run_local.status == "in_progress":
+                run_local = self.client.beta.threads.runs.retrieve(
+                    thread_id=thread_local.id,
+                    run_id=run_local.id,
+                )
+                time.sleep(0.5)
+            return run_local
+
+        def pretty_print(messages_local):
+            ret_val = ""
+            for m in messages_local:
+                # ret_val += f"{m.role}: {m.content[0].text.value}\n"
+
+                if len(m.content) != 0 and hasattr(m.content[0], "text"): # and has attribute text
+                    ret_val += f"{m.content[0].text.value}\n"
+            return ret_val
+
+        def get_response(thread):
+            return self.client.beta.threads.messages.list(thread_id=thread.id)
+
+        def get_file_ids_from_thread(thread):
+            file_ids_local = [
+                file_id
+                for m in get_response(thread)
+                for file_id in m.file_ids
+            ]
+            return file_ids_local
+
+        def write_file_to_temp_dir(file_id, output_path):
+            file_data = self.client.files.content(file_id)
+            file_data_bytes = file_data.read()
+            with open(output_path, "wb") as f:
+                f.write(file_data_bytes)
+
+        file = self.client.files.create(
+            file=open(
+                df_filename,
+                "rb",
+            ),
+            purpose="assistants",
+        )
+
+        self.my_assistant = self.client.beta.assistants.update(
+            self.my_assistant.id,
+            tools=[{"type": "code_interpreter"}],
+            file_ids=[file.id],
+        )
+
+        message = self.client.beta.threads.messages.create(
+            thread_id=self.thread.id,
+            role="user",
+            content=user_query
+        )
+
+        run = self.client.beta.threads.runs.create(
+            thread_id=self.thread.id,
+            assistant_id=self.my_assistant.id,
+        )
+
+        wait_on_run(run, self.thread)
+
+        messages = self.client.beta.threads.messages.list(
+            thread_id=self.thread.id,
+            order="asc",
+            after=message.id
+        )
+
+        # print(run.file_ids) # still only dataframe file id
+
+        file_ids = get_file_ids_from_thread(self.thread)
+        print(f"{BLUE}RETURNED FILE IDS{RESET}: {file_ids}")
+        if len(file_ids) == 0:
+            return pretty_print(messages)
+        some_file_id = file_ids[0]
+        try:
+            write_file_to_temp_dir(some_file_id, possible_plotname)
+        except Exception as e:
+            print(f"{RED}ERROR WRITING FILE{RESET}: {e}")
+            return pretty_print(messages)
+        return pretty_print(messages) + " Plot saved to " + possible_plotname

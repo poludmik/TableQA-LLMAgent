@@ -18,6 +18,7 @@ class AgentTBN:
                  head_number=2,
                  prompt_strategy="simple",
                  add_column_description=False,
+                 use_assistants_api=False,
                  ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
@@ -40,7 +41,9 @@ class AgentTBN:
         if self.coder_model != "gpt":
             self.provider = "local"
 
-        self.llm_calls = LLM(use_assistants_api=False,
+        self.use_assistants_api = use_assistants_api
+
+        self.llm_calls = LLM(use_assistants_api=use_assistants_api,
                              model=self.gpt_model,
                              head_number=self.head_number,
                              prompt_strategy=self.prompt_strategy,
@@ -89,6 +92,12 @@ class AgentTBN:
                     random.randint(10, 99)) + ".png"
             else:  # Save plot to a provided filepath
                 possible_plotname = save_plot_path
+
+        if self.use_assistants_api:
+            if show_plot:
+                print(f"{RED}The show_plot parameter is not supported for answer_query() with the use_assistants_api parameter enabled!{RESET}")
+            text_answer = self.llm_calls.pure_openai_assistant_answer(self._table_file_path, query, possible_plotname)
+            return text_answer, details
 
         if self._plan is None: # Not skipping the reasoning part
             self._plan, (self._prompt_user_for_planner, self._tagged_query_type) = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
