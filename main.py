@@ -7,22 +7,24 @@ import pprint
 start_time = time.time()
 
 # csv_path = "csvs/Car Specs 12.xlsx"
-csv_path = "dataset/dataset_tables/random_csvs/EV_Battery_Data.csv"
-# csv_path = "dataset/dataset_tables/random_csvs/test_CSV_file_gdp.csv"
+# csv_path = "dataset/dataset_tables/random_csvs/EV_Battery_Data.csv"
+csv_path = "dataset/dataset_tables/random_csvs/test_CSV_file_gdp.csv"
 agent = AgentTBN(csv_path,
-                 max_debug_times=2,
+                 max_debug_times=0,
                  gpt_model="gpt-3.5-turbo-1106", # "gpt-3.5-turbo-1106", "gpt-4-1106-preview", "gpt-3.5-turbo-instruct", "gpt-3.5-turbo-0125"
                  head_number=2,
-                 prompt_strategy="functions", # "functions", "simple"
-                 # coder_model="codellama/CodeLlama-7b-Instruct-hf"
-                 coder_model="gpt",
+                 prompt_strategy="simple", # "functions", "simple"
+                 # coder_model="gpt-3.5-turbo-1106",
+                 # coder_model="codellama/CodeLlama-7b-Instruct-hf",
+                 # coder_model="WizardLM/WizardCoder-3B-V1.0", # goes better with simple prompts, i.e. without examples
+                 coder_model="WizardLM/WizardCoder-3B-V1.0",
                  add_column_description=True,
                  )
 
 
 # query = "What is the maximum Temperature?"
-query = "the correlation between current and voltage"
-# query = "minimal value of rate of happy"
+# query = "the correlation between current and voltage"
+query = "minimal value of rate of happy"
 # query = "Find top 10 largest charging cycles and pieplot them. Add values. Use red color for the biggest one. Add shadow. Title it 'Ch. Cycles'."
 # query = "Find the correlation between gdp and happiness index."
 # query = "Create a pie plot of the top 5 minimal values in the happiness index column."

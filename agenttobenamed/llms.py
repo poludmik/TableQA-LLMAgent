@@ -22,6 +22,7 @@ import time
 from enum import Enum
 
 from .prompts import *
+from .coder_llms import *
 
 
 class TopicClassifier(BaseModel):
@@ -189,80 +190,26 @@ class LLM:
 
         return self._call_openai_llm(selected_prompt, role=Role.PLANNER), (selected_prompt, query_type)
 
-    def generate_code(self, user_query, df, plan, show_plot=False, tagged_query_type="general", llm="gpt", adapter_path=""):
-        prompt = self.prompts.generate_code_prompt(df, user_query, plan)
+    def generate_code(self, user_query, df, plan, show_plot=False, tagged_query_type="general", llm="gpt-3.5-turbo-1106", adapter_path=""):
+        instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
         if tagged_query_type == "plot" and not show_plot: # don't include plt.show() in the generated code
-            prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan)
-        if llm == "gpt":
-            return self._call_openai_llm(prompt, role=Role.CODER), prompt
-        else: # local llm
-            tokenizer = AutoTokenizer.from_pretrained(llm)
-            if self.local_coder_model is None:
-                self.local_coder_model = AutoModelForCausalLM.from_pretrained(
-                    llm,
-                    # torch_dtype=torch.bfloat16,
-                    device_map={"": 0},
-                    # load_in_4bit=True,
-                    load_in_8bit=True,
-                    # quantization_config=BitsAndBytesConfig(
-                    #     load_in_4bit=True,
-                    #     bnb_4bit_compute_dtype=torch.bfloat16,
-                    #     bnb_4bit_use_double_quant=True,
-                    #     bnb_4bit_quant_type='nf4',
-                    # ),
-                    # low_cpu_mem_usage=True
-                )
-                if adapter_path != "":
-                    adapter_path, _ = get_last_checkpoint(adapter_path)
-                    self.local_coder_model = PeftModel.from_pretrained(self.local_coder_model, adapter_path)
-                    self.local_coder_model.eval()
+            instruction_prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan)
 
-            self.local_coder_model.eval()
-            prompt = f"<s>[INST] {prompt} [/INST]"
+        if llm.startswith("gpt"):
+            return GPTCoder().query(llm, instruction_prompt), instruction_prompt
+            # return self._call_openai_llm(prompt, role=Role.CODER), prompt
+        elif llm == "codellama/CodeLlama-7b-Instruct-hf": # local llm
+            answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
+                                                                            instruction_prompt,
+                                                                            already_loaded_model=self.local_coder_model,
+                                                                            adapter_path=adapter_path)
+            return answer, instruction_prompt
 
-            max_new_tokens = 500
-            temperature = 1e-9
+        elif llm.startswith("WizardLM/WizardCoder-"): # under 34B
+            return WizardCoder().query(llm, instruction_prompt), instruction_prompt
 
-            def generate(m, user_question, max_new_tokens_local=max_new_tokens, top_p=1, temp=temperature):
-                inputs = tokenizer(prompt.format(user_question=user_question), return_tensors="pt").to('cuda')
-                outputs = m.generate(
-                    **inputs,
-                    max_new_tokens=max_new_tokens_local,
-                    # **inputs,
-                    # generation_config=GenerationConfig(
-                    #     # do_sample=True,
-                    # max_new_tokens=max_new_tokens,
-                    #     # top_p=top_p,
-                    #     # temperature=temp,
-                    # )
-                )
-                text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-                # print(text)
-
-                text = re.sub(r'\[INST\].*?\[/INST\]', '', text, flags=re.DOTALL)
-                print("Text after regex:", text)
-                return text
-
-            return generate(self.local_coder_model, prompt), prompt
 
     def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
         prompt = self.prompts.fix_code_prompt(df, user_query, code_to_be_fixed, error_message)
         return self._call_openai_llm(prompt, Role.DEBUGGER), prompt
 
-
-def get_last_checkpoint(checkpoint_dir):
-    if isdir(checkpoint_dir):
-        is_completed = exists(join(checkpoint_dir, 'completed'))
-        if is_completed:
-            print("what")
-            return None, True # already finished
-        max_step = 0
-        for filename in os.listdir(checkpoint_dir):
-            if isdir(join(checkpoint_dir, filename)) and filename.startswith('checkpoint'):
-                max_step = max(max_step, int(filename.replace('checkpoint-', '')))
-        if max_step == 0: return None, is_completed # training started, but no checkpoint
-        checkpoint_dir = join(checkpoint_dir, f'checkpoint-{max_step}')
-        print(f"Found a previous checkpoint at: {checkpoint_dir}")
-        return checkpoint_dir, is_completed # checkpoint found!
-    print("isdir is false")
-    return None, False # first training
