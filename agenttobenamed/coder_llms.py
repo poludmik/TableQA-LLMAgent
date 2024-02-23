@@ -1,10 +1,11 @@
 import os
 import re
 from os.path import exists, join, isdir
+import torch
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 from peft import PeftModel
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 from vllm import LLM, SamplingParams
 
 
@@ -44,16 +45,14 @@ class CodeLlamaInstructCoder(CoderLLM):
         if already_loaded_model is None:
             already_loaded_model = AutoModelForCausalLM.from_pretrained(
                 model_name,
-                # torch_dtype=torch.bfloat16,
                 device_map={"": 0},
-                # load_in_4bit=True,
-                load_in_8bit=True,
-                # quantization_config=BitsAndBytesConfig(
-                #     load_in_4bit=True,
-                #     bnb_4bit_compute_dtype=torch.bfloat16,
-                #     bnb_4bit_use_double_quant=True,
-                #     bnb_4bit_quant_type='nf4',
-                # ),
+                quantization_config=BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    # load_in_8bit=True,
+                    # bnb_4bit_compute_dtype=torch.bfloat16,
+                    # bnb_4bit_use_double_quant=True,
+                    # bnb_4bit_quant_type='nf4',
+                ),
                 # low_cpu_mem_usage=True
             )
             if adapter_path != "":
@@ -125,3 +124,27 @@ class WizardCoder(CoderLLM):
 
         return evaluate_vllm(input_text)
 
+class Magicoder(CoderLLM):
+
+    def query(self, model_name: str, input_text: str) -> str:
+        prompt = f'''You are an exceptionally intelligent coding assistant that consistently delivers accurate and reliable responses to user instructions.
+
+        @@ Instruction
+        {input_text}
+
+        @@ Response
+        '''
+
+        sampling_params = SamplingParams(temperature=0.0, top_p=0.95, max_tokens=2048)
+
+        llm = LLM(model="TheBloke/Magicoder-S-DS-6.7B-AWQ", quantization="AWQ", dtype="auto", gpu_memory_utilization=0.95, max_model_len=8192)
+
+        outputs = llm.generate(prompt, sampling_params)
+
+        # Print the outputs.
+        for output in outputs:
+            prompt = output.prompt
+            generated_text = output.outputs[0].text
+            print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
+            print(type(generated_text))
+            return generated_text

@@ -15,9 +15,9 @@ agent = AgentTBN(csv_path,
                  head_number=2,
                  prompt_strategy="simple", # "functions", "simple"
                  # coder_model="gpt-3.5-turbo-1106",
-                 # coder_model="codellama/CodeLlama-7b-Instruct-hf",
+                 coder_model="codellama/CodeLlama-7b-Instruct-hf",
                  # coder_model="WizardLM/WizardCoder-3B-V1.0", # goes better with simple prompts, i.e. without examples
-                 coder_model="WizardLM/WizardCoder-3B-V1.0",
+                 # coder_model="ise-uiuc/Magicoder-S-CL-7B",
                  add_column_description=True,
                  )
 

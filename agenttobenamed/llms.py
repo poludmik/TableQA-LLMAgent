@@ -208,6 +208,9 @@ class LLM:
         elif llm.startswith("WizardLM/WizardCoder-"): # under 34B
             return WizardCoder().query(llm, instruction_prompt), instruction_prompt
 
+        elif llm == "ise-uiuc/Magicoder-S-CL-7B": # doesn't really work yet
+            return CodeLlamaInstructCoder().query(llm, instruction_prompt), instruction_prompt
+
 
     def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
         prompt = self.prompts.fix_code_prompt(df, user_query, code_to_be_fixed, error_message)
