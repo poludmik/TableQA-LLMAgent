@@ -262,7 +262,6 @@ Return the definition of a python function called `def solve(df):` that accompli
 Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
 Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
 You must include the necessary import statements at the top of the code.
-You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
 Do not test the function with anything similar to `print(solve(df))`, only define the function, like in the following examples:
 
@@ -324,7 +323,6 @@ Approach each task from the list in isolation, advancing to the next only upon i
 Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
 You must include the necessary import statements at the top of the code.
 You must not include `plt.show()`. Just save the plot the way it is stated in the tasks.
-You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
 Do not test the function with anything similar to `print(solve(df))`, only define the function, like in the following examples:
 
@@ -409,28 +407,6 @@ Example of the output format:
 ```
 """
 
-    fix_code = """You are a helpful assistant that corrects the python code that resulted in an error and returns the corrected code.
-
-The code was designed to achieve this user request: '{input}'.
-The DataFrame `df`, that we are working with has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
-{df_head}
-{column_description}
-The execution of the following code that was provided in the previous step resulted in an error:
-```python
-{code}
-```
-
-The error message is: '{error}'
-
-Return a corrected python code that fixes the error.
-Always include the import statements at the top of the code, and comments and print statements where necessary.
-Use the same format with backticks. Example of the output format:
-```python
-
-```
-"""
-
     def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
@@ -447,9 +423,96 @@ Use the same format with backticks. Example of the output format:
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
         return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan, head_number=head_number, column_description=column_description, save_plot_name=save_plot_name)
 
-    def format_fix_code_prompt(self, head_number, df, user_query, code_to_be_fixed, error_message, column_description):
-        return self.fix_code.format(code=code_to_be_fixed, df_head=df.head(head_number), error=error_message, input=user_query, head_number=head_number, column_description=column_description)
 
+class PromptsCoderOnlyForFunctionGeneration:
+
+    generate_code = """You are really good with Python and the pandas library. The user provided a query that you need to help achieving: '{input}'. 
+You also have a list of subtasks to be accomplished.
+
+You have been presented with a pandas dataframe named `df`.
+The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
+The result of `print(df.head({head_number}))` is:
+{df_head}
+{column_description}
+Return the definition of a python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
+You must include the necessary import statements at the top of the code.
+You must use the backticks to enclose the code.
+Only show the visualizations if the user query explicitly asks for them (plot, chart, etc.).
+Do not test the function with anything similar to `print(solve(df))`, only define the function, in the format of the following example:
+
+Here are examples of the output format:
+
+Example format:
+```python
+import pandas as pd
+
+def solve(df):
+    # Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
+    <CODE>
+
+    # Extract the 5 rows from the sorted DataFrame.
+    <CODE>
+
+    # Create a list of the 'Country' column from the extracted dataframe.
+    <CODE>
+
+    # Return the list of countries.
+    return <RESULT>
+```
+"""
+
+    generate_code_for_plot_save = """You are really good with Python and the pandas library. The user provided a query that you need to help achieving: '{input}'. 
+
+You have been presented with a pandas dataframe named `df`.
+The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
+The result of `print(df.head({head_number}))` is:
+{df_head}
+{column_description}
+Return the definition of a python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
+You must include the necessary import statements at the top of the code.
+You must not include `plt.show()`. Just save the plot to '{save_plot_name}' with `plt.savefig('{save_plot_name}')`.
+You must use the backticks to enclose the code.
+Do not test the function with anything similar to `print(solve(df))`, only define the function, in the format of the following example.
+
+Here is an example of the output format:
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def solve(df):
+    # Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
+    <CODE>
+
+    # Extract the 5 rows from the sorted DataFrame.
+    <CODE>
+
+    # Create a pie plot of the 'GDP' column of the extracted dataframe.
+    <CODE>
+
+    # Save the pie plot to 'plots/example_plot00.png'.
+    <CODE>
+```
+"""
+
+    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
+        raise Exception("This prompt strategy does not support generating steps.")
+
+    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name,
+                                                   column_description):
+        raise Exception("This prompt strategy does not support generating steps.")
+
+    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query, column_description):
+        raise Exception("This prompt strategy does not support generating steps.")
+
+    def format_generate_code_prompt(self, head_number, df, user_query, plan, column_description):
+        return self.generate_code.format(input=user_query, df_head=df.head(head_number), plan=plan,
+                                         head_number=head_number, column_description=column_description)
+
+    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan, column_description,
+                                                  save_plot_name=""):
+        assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan,
+                                                       head_number=head_number, column_description=column_description, save_plot_name=save_plot_name)
 
 
 
@@ -468,6 +531,8 @@ class Prompts:
             self.strategy = PromptsSimple()
         elif str_strategy == "coder_only_simple":
             self.strategy = PromptsSimpleCoderOnly()
+        elif str_strategy == "coder_only_functions":
+            self.strategy = PromptsCoderOnlyForFunctionGeneration()
         else:
             raise Exception(f"{RED}Unknown prompt strategy!{RESET}")
 

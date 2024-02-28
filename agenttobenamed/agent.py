@@ -101,7 +101,7 @@ class AgentTBN:
             return text_answer, details
 
         self._tagged_query_type = self.llm_calls.tag_query_type(query)
-        if self._plan is None and self.prompt_strategy != "coder_only_simple": # Not skipping the reasoning part
+        if self._plan is None and not self.prompt_strategy.startswith("coder_only"): # Not skipping the reasoning part
             self._plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type)
 
         generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, self._plan,
@@ -109,11 +109,13 @@ class AgentTBN:
                                                                tagged_query_type=self._tagged_query_type,
                                                                llm=self.coder_model,
                                                                adapter_path=self.adapter_path,
-                                                               save_plot_name=possible_plotname, # for the "coder_only_simple" prompt_strategy
+                                                               save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
                                                                )
 
+        print(f"Generated code: {generated_code}")
+
         code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
-        if self.prompt_strategy == "functions":
+        if self.prompt_strategy.endswith("functions"):
             code_to_execute = code_to_execute + "\n\n" + "print(solve(df))"
         details["first_generated_code"] = code_to_execute
 

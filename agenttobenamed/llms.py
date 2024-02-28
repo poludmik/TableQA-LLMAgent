@@ -191,7 +191,7 @@ class LLM:
                       tagged_query_type="general",
                       llm="gpt-3.5-turbo-1106",
                       adapter_path="",
-                      save_plot_name="" # for the "coder_only_simple" prompt strategy
+                      save_plot_name="" # for the "coder_only" prompt strategies
                       ):
         instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
         if tagged_query_type == "plot" and not show_plot: # don't include plt.show() in the generated code
@@ -199,7 +199,6 @@ class LLM:
 
         if llm.startswith("gpt"):
             return GPTCoder().query(llm, instruction_prompt), instruction_prompt
-            # return self._call_openai_llm(prompt, role=Role.CODER), prompt
         elif llm == "codellama/CodeLlama-7b-Instruct-hf": # local llm
             answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
                                                                             instruction_prompt,
