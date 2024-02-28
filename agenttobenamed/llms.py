@@ -61,7 +61,11 @@ class LLM:
             self._call_openai_llm = self._get_response_from_base_gpt
 
     @staticmethod
-    def tag_query_type(user_query):
+    def structured_decoding(user_query: str):
+        pass
+
+    @staticmethod
+    def tag_query_type(user_query: str):
         """
         Select a prompt between the one saving the plot and the one calculating some math.
         """

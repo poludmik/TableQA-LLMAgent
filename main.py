@@ -38,10 +38,10 @@ query = "Create a pie plot of the top 5 minimal values in the happiness index co
 # query = "average depth in the 'Plot' column" # Tags as 'general' text answer!!!
 
 # result, details_dict = agent.answer_query(query, show_plot=False, save_plot_path="plots/kek2.png")
-result, details_dict = agent.answer_query(query,
-                                          show_plot=True,
-                                          save_plot_path="plots/testing_coder_only.png",
-                                          )
+# result, details_dict = agent.answer_query(query,
+#                                           show_plot=True,
+#                                           save_plot_path="plots/testing_coder_only.png",
+#                                           )
 
 print("Returned result:", result)
 
