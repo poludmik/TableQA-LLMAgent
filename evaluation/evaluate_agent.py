@@ -4,14 +4,14 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 
 
-prompt_template = """Act as a teacher evaluating another agent's answer. The agent was given a dataframe and asked the following question: "{user_query}".
+prompt_template = """Act as a teacher evaluating another agent's answer. The agent was given a DataFrame and asked the following question: "{user_query}".
 
 The agent's answer was: "{answer}".
 
 The correct answer is: "{correct_answer}".
 
 Compare the agent's answer to the correct answer and provide a score of 0 or 1, where 0 means that the agent's answer is completely wrong and 1 means that the agent's answer is completely correct.
-The answers could have any format, including a number, a string, a list, a dictionary, a dataframe, etc. So you need to find out if the agent's answer is included in the correct answer in some way.
+The answers could have any format, including a number, a string, a list, a dictionary, a DataFrame, etc. So you need to find out if the agent's answer is included in the correct answer in some way.
 If the question is about a number, then compare these numbers to be equal with a precision of 0.01.
 Here are some examples of correct answers, agent's answers and their scores:
 
@@ -23,7 +23,7 @@ Here are some examples of correct answers, agent's answers and their scores:
 2        Mechanical     2022-2023                              1316                          649                      1965           1009              956                     362
 ", agent's answer: "[1588, 1513, 1965]", score: 1.
 
-- Correct answer: "[2023-03-11, 2023-03-31, 2023-02-19]", agent's answer: "0   2023-02-19
+- Correct answer: "{[2023-03-11, 2023-03-31, 2023-02-19]}", agent's answer: "0   2023-02-19
 1   2023-03-11
 8   2023-03-31
 Name: Last restock date, dtype: datetime64[ns]
