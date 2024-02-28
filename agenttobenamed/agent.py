@@ -42,6 +42,7 @@ class AgentTBN:
             self.provider = "local"
 
         self.use_assistants_api = use_assistants_api
+        assert not (self.use_assistants_api and self.prompt_strategy == "coder_only_simple"), "Both use_assistants_api and coder_only_simple cannot be True at the same time."
 
         self.llm_calls = LLM(use_assistants_api=use_assistants_api,
                              model=self.gpt_model,
@@ -99,14 +100,17 @@ class AgentTBN:
             text_answer = self.llm_calls.pure_openai_assistant_answer(self._table_file_path, query, possible_plotname)
             return text_answer, details
 
-        if self._plan is None: # Not skipping the reasoning part
-            self._plan, (self._prompt_user_for_planner, self._tagged_query_type) = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname)
+        self._tagged_query_type = self.llm_calls.tag_query_type(query)
+        if self._plan is None and self.prompt_strategy != "coder_only_simple": # Not skipping the reasoning part
+            self._plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type)
 
         generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, self._plan,
                                                                show_plot=show_plot,
                                                                tagged_query_type=self._tagged_query_type,
                                                                llm=self.coder_model,
-                                                               adapter_path=self.adapter_path)
+                                                               adapter_path=self.adapter_path,
+                                                               save_plot_name=possible_plotname, # for the "coder_only_simple" prompt_strategy
+                                                               )
 
         code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         if self.prompt_strategy == "functions":

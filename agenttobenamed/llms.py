@@ -167,8 +167,8 @@ class LLM:
         print(f"{BLUE}ASSISTANT MESSAGE{RESET}: {messages.data[0].content[0].text.value}")
         return messages.data[0].content[0].text.value
 
-    def plan_steps_with_gpt(self, user_query, df, save_plot_name):
-        query_type = self.tag_query_type(user_query)
+    def plan_steps_with_gpt(self, user_query, df, save_plot_name, query_type=None):
+        assert query_type is not None, "query_type must be specified (tagged before calling this function)"
 
         temlate_for_plot_planner = self.prompts.generate_steps_for_plot_show_prompt(df, user_query)
         if save_plot_name is not None:
@@ -181,12 +181,21 @@ class LLM:
 
         # print(selected_prompt)
 
-        return self._call_openai_llm(selected_prompt, role=Role.PLANNER), (selected_prompt, query_type)
+        return self._call_openai_llm(selected_prompt, role=Role.PLANNER), selected_prompt
 
-    def generate_code(self, user_query, df, plan, show_plot=False, tagged_query_type="general", llm="gpt-3.5-turbo-1106", adapter_path=""):
+    def generate_code(self,
+                      user_query,
+                      df,
+                      plan,
+                      show_plot=False,
+                      tagged_query_type="general",
+                      llm="gpt-3.5-turbo-1106",
+                      adapter_path="",
+                      save_plot_name="" # for the "coder_only_simple" prompt strategy
+                      ):
         instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
         if tagged_query_type == "plot" and not show_plot: # don't include plt.show() in the generated code
-            instruction_prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan)
+            instruction_prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan, save_plot_name=save_plot_name)
 
         if llm.startswith("gpt"):
             return GPTCoder().query(llm, instruction_prompt), instruction_prompt
