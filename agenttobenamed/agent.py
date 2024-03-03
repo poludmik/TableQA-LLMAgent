@@ -117,7 +117,7 @@ class AgentTBN:
                                                                save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
                                                                )
 
-        print(f"Generated code: {generated_code}")
+        # print(f"Generated code: {generated_code}")
 
         code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         if self.prompt_strategy.endswith("functions"):
