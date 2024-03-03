@@ -11,6 +11,8 @@ from openai import OpenAI
 import time
 from enum import Enum
 
+from transformers import AutoModelForSequenceClassification
+
 from .prompts import *
 from .coder_llms import *
 
@@ -61,8 +63,28 @@ class LLM:
             self._call_openai_llm = self._get_response_from_base_gpt
 
     @staticmethod
-    def structured_decoding(user_query: str):
-        pass
+    def tagging_by_zero_shot_classification(user_query: str):
+        model_name = "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSequenceClassification.from_pretrained(model_name)
+
+        hypothesis = "A plot, a chart, a visualization, or a graph"
+
+        input = tokenizer(user_query, hypothesis, truncation=False, return_tensors="pt")
+        output = model(input["input_ids"].to("cpu"))
+        prediction = torch.softmax(output["logits"][0], -1).tolist()
+        label_names = ["true", "neutral"]
+        prediction = {name: round(float(pred) * 100, 1) for pred, name in zip(prediction, label_names)}
+
+        prediction_plot = prediction["true"]
+        prediction_general = prediction["neutral"]
+
+        query_topic = "plot" if prediction_plot > prediction_general else "general"
+
+        print(f"{BLUE}[DeBERTa TAG] SELECTED A PROMPT:{RESET} {YELLOW}{query_topic}{RESET}")
+
+        return query_topic
+
 
     @staticmethod
     def tag_query_type(user_query: str):
@@ -83,7 +105,7 @@ class LLM:
 
         query_topic = tagging_chain.invoke({"input": user_query})["topic"] # If halts => could be a problem with parser
 
-        print(f"{BLUE}SELECTED A PROMPT:{RESET} {YELLOW}{query_topic}{RESET}")
+        print(f"{BLUE}[OPENAI TAG] SELECTED A PROMPT:{RESET} {YELLOW}{query_topic}{RESET}")
 
         return query_topic
 

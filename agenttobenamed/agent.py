@@ -17,6 +17,7 @@ class AgentTBN:
                  adapter_path="",
                  head_number=2,
                  prompt_strategy="simple",
+                 tagging_strategy="openai",
                  add_column_description=False,
                  use_assistants_api=False,
                  ):
@@ -50,6 +51,10 @@ class AgentTBN:
                              prompt_strategy=self.prompt_strategy,
                              add_column_description=self.add_column_description
                              )
+
+        assert tagging_strategy in ["openai", "zero_shot_classification"], "Tagging strategy must be either 'openai' or 'zero_shot_classification'."
+        self.tag = self.llm_calls.tag_query_type if tagging_strategy == "openai" else self.llm_calls.tagging_by_zero_shot_classification
+
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')
@@ -100,7 +105,7 @@ class AgentTBN:
             text_answer = self.llm_calls.pure_openai_assistant_answer(self._table_file_path, query, possible_plotname)
             return text_answer, details
 
-        self._tagged_query_type = self.llm_calls.tag_query_type(query)
+        self._tagged_query_type = self.tag(query)
         if self._plan is None and not self.prompt_strategy.startswith("coder_only"): # Not skipping the reasoning part
             self._plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type)
 

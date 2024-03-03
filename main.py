@@ -9,7 +9,7 @@ csv_path = "dataset/dataset_tables/random_csvs/test_CSV_file_gdp.csv"
 agent = AgentTBN(csv_path,
                  max_debug_times=0,
                  # use_assistants_api=True,
-                 gpt_model="gpt-3.5-turbo-1106", # "gpt-3.5-turbo-1106", "gpt-4-1106-preview", "gpt-3.5-turbo-instruct", "gpt-3.5-turbo-0125"
+                 # gpt_model="gpt-3.5-turbo-1106", # "gpt-3.5-turbo-1106", "gpt-4-1106-preview", "gpt-3.5-turbo-instruct", "gpt-3.5-turbo-0125"
                  head_number=2,
                  prompt_strategy="coder_only_functions", # "functions", "simple", "coder_only_simple", "coder_only_functions"
                  coder_model="gpt-3.5-turbo-1106",
@@ -17,6 +17,7 @@ agent = AgentTBN(csv_path,
                  # coder_model="WizardLM/WizardCoder-1B-V1.0", # goes better with simple prompts, i.e. without examples
                  # coder_model="ise-uiuc/Magicoder-S-CL-7B",
                  add_column_description=True,
+                 tagging_strategy="zero_shot_classification", #"openai", "zero_shot_classification"
                  )
 
 # query = "What is the maximum Temperature?"
@@ -24,8 +25,8 @@ agent = AgentTBN(csv_path,
 # query = "minimal value of rate of happy"
 # query = "Find top 10 largest charging cycles and pieplot them. Add values. Use red color for the biggest one. Add shadow. Title it 'Ch. Cycles'."
 # query = "Find the correlation between gdp and happiness index."
-query = "Create a pie plot of the top 5 minimal values in the happiness index column in shades of blue."
-# query = "I want to know the average gdp of countries that have happiness index greater than 5.5. I also need these countries."
+# query = "Create a pie plot of the top 5 minimal values in the happiness index column in shades of blue."
+query = "I want to know the average gdp of countries that have happiness index greater than 5.5. I also need these countries."
 # query = "Can you do statistics about happiness index and gdp relationship? like their max, min and mean"
 # query = "filter out the countries with gdp less than 4380756541439"
 # query = "Pie plot top 11 accelerations"
@@ -38,10 +39,10 @@ query = "Create a pie plot of the top 5 minimal values in the happiness index co
 # query = "average depth in the 'Plot' column" # Tags as 'general' text answer!!!
 
 # result, details_dict = agent.answer_query(query, show_plot=False, save_plot_path="plots/kek2.png")
-# result, details_dict = agent.answer_query(query,
-#                                           show_plot=True,
-#                                           save_plot_path="plots/testing_coder_only.png",
-#                                           )
+result, details_dict = agent.answer_query(query,
+                                          show_plot=True,
+                                          save_plot_path="plots/testing_coder_only.png",
+                                          )
 
 print("Returned result:", result)
 

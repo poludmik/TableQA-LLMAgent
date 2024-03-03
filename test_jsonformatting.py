@@ -1,41 +1,3 @@
-# from transformers import AutoModelForCausalLM, AutoTokenizer
-# from jsonformer import Jsonformer
-#
-#
-# json_schema = {
-#     "task": "Classify if the user asked for a vizualization, e.g. plot or graph, or asked for some general numerical result, e.g. finding correlation or maximum value. Assign 'general' or 'plot' to 'query_type'",
-#     "properties": {
-#         "query_type": {"type": "string", "default": "general"},
-#     }
-# }
-#
-# # json_schema = {
-# #     "title": "Decoding Schema",
-# #     "type": "object",
-# #     "properties": {
-# #         "action": {"type": "string", "default": "Classify if the user asked for a vizualization, e.g. plot or graph, or asked for some general numerical result, e.g. finding correlation or maximum value. Assign 'general' or 'plot' to 'query_type'"},
-# #         "action_input": {
-# #             "type": "string",
-# #             "properties": "query_type",
-# #         },
-# #     },
-# # }
-#
-# # name = "SummerSigh/Pythia410m-V0-Instruct"
-# name = "Locutusque/TinyMistral-248M-Instruct"
-# model = AutoModelForCausalLM.from_pretrained(name)
-# tokenizer = AutoTokenizer.from_pretrained(name)
-#
-# prompt = "Pie plot 3 largest gdps. Add values. Use red color for the biggest one. Add shadow. Title it 'GDP'."
-# # prompt = "What is the maximum Temperature?"
-# jsonformer = Jsonformer(model, tokenizer, json_schema, prompt)
-# generated_data = jsonformer()
-#
-# print(generated_data)
-
-
-
-
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import pandas as pd
@@ -51,13 +13,6 @@ sequence_to_classify = "Pie chart 3 largest gdps. Add values. Use red color for 
 model_name = "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
-# input = tokenizer(sequence_to_classify, hypothesis, truncation=True, return_tensors="pt")
-# output = model(input["input_ids"].to("cpu"))
-# prediction = torch.softmax(output["logits"][0], -1).tolist()
-# label_names = ["entailment", "neutral", "contradiction"]
-# prediction = {name: round(float(pred) * 100, 1) for pred, name in zip(prediction, label_names)}
-# print(prediction)
-
 
 hypothesis = "A plot, a chart, a visualization, or a graph"
 
