@@ -13,7 +13,7 @@ class AgentTBN:
     def __init__(self, table_file_path: str,
                  max_debug_times: int = 2,
                  gpt_model="gpt-3.5-turbo-1106",
-                 coder_model="gpt",
+                 coder_model="gpt-3.5-turbo-1106",
                  adapter_path="",
                  head_number=2,
                  prompt_strategy="simple",
@@ -39,7 +39,7 @@ class AgentTBN:
         self._prompt_user_for_planner = None
 
         self.provider = "openai"
-        if self.coder_model != "gpt":
+        if not self.coder_model.startswith("gpt"):
             self.provider = "local"
 
         self.use_assistants_api = use_assistants_api
