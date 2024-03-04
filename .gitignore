@@ -10,3 +10,4 @@ evaluation/results_private_functions_skip_reasoning/
 evaluation/conf/config_collect_functions.yaml
 evaluation/conf/config_collect_skip_reasoning.yaml
 /dataset/Text2Analysis/
+testing/
