@@ -123,3 +123,10 @@ class Code:
             return "ERROR", exec_traceback
 
 
+    @staticmethod
+    def prepend_imports(code_str: str) -> str:
+        return f"import pandas as pd\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n{code_str}"
+
+    @staticmethod
+    def append_result_storage(code_str: str) -> str:
+        return code_str + "\n\n" + "result = solve(df)\nprint(result)"

@@ -1,6 +1,3 @@
-# from dataclasses import dataclass
-import pandas as pd
-
 from .logger import *
 
 class PromptsSimple:
@@ -83,7 +80,7 @@ Return only the Python code that accomplishes the following tasks:
 
 Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
 Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
-You must include the necessary import statements at the top of the code.
+Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
 
@@ -106,7 +103,7 @@ Return only the Python code that accomplishes the following tasks:
 
 Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
 Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
-You must include the necessary import statements at the top of the code.
+Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must not include `plt.show()`. Just save the plot the way it is stated in the tasks.
 You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
@@ -259,7 +256,7 @@ Return the definition of a Python function called `def solve(df):` that accompli
 
 Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
 Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
-You must include the necessary import statements at the top of the code.
+Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must use the backticks to enclose the code.
 Do not test the function with anything similar to `print(solve(df))`, only define the function, like in the following examples:
 
@@ -267,8 +264,6 @@ Here are examples of the output format:
 
 Example 1:
 ```python
-import pandas as pd
-
 def solve(df):
     # 1. Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
     <CODE>
@@ -285,9 +280,6 @@ def solve(df):
 
 Example 2:
 ```python
-import pandas as pd
-import random
-
 def solve(df):
     # 1. Find and store the minimal value in the 'Speed' column.
     <CODE>
@@ -319,16 +311,13 @@ Return the definition of a Python function called `def solve(df):` that accompli
 
 Approach each task from the list in isolation, advancing to the next only upon its successful resolution. 
 Strictly follow to the prescribed instructions to avoid oversights and ensure an accurate solution.
-You must include the necessary import statements at the top of the code.
+Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must not include `plt.show()`. Just save the plot the way it is stated in the tasks.
 You must use the backticks to enclose the code.
 Do not test the function with anything similar to `print(solve(df))`, only define the function, like in the following examples:
 
 Here is an example of the output format:
 ```python
-import pandas as pd
-import matplotlib.pyplot as plt
-
 def solve(df):
     # 1. Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
     <CODE>
@@ -375,7 +364,7 @@ The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return only the Python code that accomplishes the user query.
-You must include the necessary import statements at the top of the code.
+Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
 Only show the visualizations if the user query explicitly asks for them (plot, chart, etc.).
@@ -394,7 +383,7 @@ The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return only the Python code that accomplishes the user query.
-You must include the necessary import statements at the top of the code.
+Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must not include `plt.show()`. Just save the plot to '{save_plot_name}' with `plt.savefig('{save_plot_name}')`.
 You must include print statements to output the final result of your code.
 You must use the backticks to enclose the code.
@@ -433,7 +422,7 @@ The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
-You must include the necessary import statements at the top of the code.
+Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must use the backticks to enclose the code.
 Only show the visualizations if the user query explicitly asks for them (plot, chart, etc.).
 Do not test the function with anything similar to `print(solve(df))`, only define the function, in the format of the following example:
@@ -442,8 +431,6 @@ Here are examples of the output format:
 
 Example format:
 ```python
-import pandas as pd
-
 def solve(df):
     # Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
     <CODE>
@@ -467,16 +454,13 @@ The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
-You must include the necessary import statements at the top of the code.
+Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must not include `plt.show()`. Just save the plot to '{save_plot_name}' with `plt.savefig('{save_plot_name}')`.
 You must use the backticks to enclose the code.
 Do not test the function with anything similar to `print(solve(df))`, only define the function, in the format of the following example.
 
 Here is an example of the output format:
 ```python
-import pandas as pd
-import matplotlib.pyplot as plt
-
 def solve(df):
     # Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
     <CODE>

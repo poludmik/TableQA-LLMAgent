@@ -120,9 +120,11 @@ class AgentTBN:
         # print(f"Generated code: {generated_code}")
 
         code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
-        if self.prompt_strategy.endswith("functions"):
-            code_to_execute = code_to_execute + "\n\n" + "print(solve(df))"
         details["first_generated_code"] = code_to_execute
+
+        code_to_execute = Code.prepend_imports(code_to_execute)
+        if self.prompt_strategy.endswith("functions"):
+            code_to_execute = Code.append_result_storage(code_to_execute)
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=self._tagged_query_type)
         debug_prompt = ""
