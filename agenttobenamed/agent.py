@@ -14,6 +14,7 @@ class AgentTBN:
                  max_debug_times: int = 2,
                  gpt_model="gpt-3.5-turbo-1106",
                  coder_model="gpt-3.5-turbo-1106",
+                 quantization_bits="no quantization", # for local coding LLMs
                  adapter_path="",
                  head_number=2,
                  prompt_strategy="simple",
@@ -31,6 +32,7 @@ class AgentTBN:
         self.gpt_model = gpt_model
         self.coder_model = coder_model
         self.adapter_path = adapter_path
+        self.quantization_bits = quantization_bits
         self.max_debug_times = max_debug_times
 
         # To skip the reasoning part for one run:
@@ -58,6 +60,9 @@ class AgentTBN:
         pd.set_option('display.max_columns', None) # So that df.head(1) did not truncate the printed table
         pd.set_option('display.expand_frame_repr', False) # So that did not insert new lines while printing the df
         # print('damn!')
+
+    def delete_local_llm(self):
+        self.llm_calls.local_coder_model = None
 
     @property
     def df(self): # Lazy loading, when df is first accessed.
@@ -113,6 +118,7 @@ class AgentTBN:
                                                                show_plot=show_plot,
                                                                tagged_query_type=self._tagged_query_type,
                                                                llm=self.coder_model,
+                                                               quantization_bits=self.quantization_bits,
                                                                adapter_path=self.adapter_path,
                                                                save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
                                                                )

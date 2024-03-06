@@ -219,7 +219,8 @@ class LLM:
                       tagged_query_type="general",
                       llm="gpt-3.5-turbo-1106",
                       adapter_path="",
-                      save_plot_name="" # for the "coder_only" prompt strategies
+                      save_plot_name="", # for the "coder_only" prompt strategies
+                      quantization_bits="no quantization", # quantization for local llm
                       ):
         print(f"{BLUE}[{llm}] GENERATING CODE{RESET}: {YELLOW}{llm}{RESET}")
         instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
@@ -232,7 +233,8 @@ class LLM:
             answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
                                                                             instruction_prompt,
                                                                             already_loaded_model=self.local_coder_model,
-                                                                            adapter_path=adapter_path)
+                                                                            adapter_path=adapter_path,
+                                                                            bit=quantization_bits)
             return answer, instruction_prompt
 
         elif llm.startswith("WizardLM/WizardCoder-"): # under 34B

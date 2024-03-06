@@ -18,6 +18,7 @@ agent = AgentTBN(csv_path,
                  # coder_model="ise-uiuc/Magicoder-S-CL-7B",
                  add_column_description=True,
                  tagging_strategy="zero_shot_classification", #"openai", "zero_shot_classification"
+                 quantization_bits="no quantization", # "4", "8"
                  )
 
 # query = "What is the maximum Temperature?"
