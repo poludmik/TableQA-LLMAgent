@@ -21,6 +21,7 @@ class AgentTBN:
                  tagging_strategy="openai",
                  add_column_description=False,
                  use_assistants_api=False,
+                 query_type=None,
                  ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
@@ -35,9 +36,8 @@ class AgentTBN:
         self.quantization_bits = quantization_bits
         self.max_debug_times = max_debug_times
 
-        # To skip the reasoning part for one run:
         self._plan = None
-        self._tagged_query_type = None
+        self._tagged_query_type = None if not query_type else query_type
         self._prompt_user_for_planner = None
 
         self.provider = "openai"
@@ -110,7 +110,9 @@ class AgentTBN:
             text_answer = self.llm_calls.pure_openai_assistant_answer(self._table_file_path, query, possible_plotname)
             return text_answer, details
 
-        self._tagged_query_type = self.tag(query)
+        if not self._tagged_query_type: # if not set by the user
+            self._tagged_query_type = self.tag(query)
+
         if self._plan is None and not self.prompt_strategy.startswith("coder_only"): # Not skipping the reasoning part
             self._plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type)
 

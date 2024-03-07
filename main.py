@@ -20,6 +20,7 @@ agent = AgentTBN(csv_path,
                  add_column_description=True,
                  tagging_strategy="openai", #"openai", "zero_shot_classification"
                  quantization_bits="4", # "4", "8"
+                 query_type="plot",
                  )
 
 # query = "What is the maximum Temperature?"
