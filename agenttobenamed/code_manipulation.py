@@ -71,9 +71,9 @@ class Code:
                           "# The dataframe df has already been defined", code_res)
 
         if not show_plot:
-            if "plt.show()" in code_res:
+            if re.search(r"(?<!`)plt\.show\(\)(?!`)", code_res): # searches for plt.show() not enclosed in backticks
                 print(f"{RED}PLT.SHOW() in the code!!!{RESET}:")
-            code_res = code_res.replace("plt.show()", "")
+                code_res = code_res.replace("plt.show()", "")
 
         # Define the regular expression pattern to match the blacklist items
         pattern = r"^(.*\b(" + "|".join(blacklist) + r")\b.*)$"

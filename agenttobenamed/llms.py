@@ -30,9 +30,9 @@ class Tagging(BaseModel):
 
 
 class Role(Enum):
-    PLANNER=0
-    CODER=1
-    DEBUGGER=2
+    PLANNER = 0
+    CODER = 1
+    DEBUGGER = 2
 
 
 class LLM:
@@ -47,14 +47,16 @@ class LLM:
         self.head_number = head_number
         self.local_coder_model = None
         self.add_column_description = add_column_description
-        self.prompts = Prompts(str_strategy=prompt_strategy, head_number=head_number, add_column_description=self.add_column_description)
+        self.prompts = Prompts(str_strategy=prompt_strategy, head_number=head_number,
+                               add_column_description=self.add_column_description)
         if use_assistants_api:
             self._call_openai_llm = self._get_response_from_assistant
             self.client = OpenAI()
             self.my_assistant = self.client.beta.assistants.create(
                 name="Data Assistant",
-                instructions="""You are a data analyst who can analyse and interpret data files such as CSV and XLSX and can draw conclusions from the data. """ +\
-                """If user asks for a plot or for any other sort of visualization, just return a png file with what he asked for.""", # must state to return a file
+                instructions="""You are a data analyst who can analyse and interpret data files such as CSV and XLSX and can draw conclusions from the data. """ + \
+                             """If user asks for a plot or for any other sort of visualization, just return a png file with what he asked for.""",
+                # must state to return a file
                 model=self.model,
                 tools=[{"type": "code_interpreter"}],
             )
@@ -85,7 +87,6 @@ class LLM:
 
         return query_topic
 
-
     @staticmethod
     def tag_query_type(user_query: str):
         """
@@ -103,7 +104,7 @@ class LLM:
         )
         tagging_chain = prompt | model_with_functions | JsonOutputFunctionsParser()
 
-        query_topic = tagging_chain.invoke({"input": user_query})["topic"] # If halts => could be a problem with parser
+        query_topic = tagging_chain.invoke({"input": user_query})["topic"]  # If halts => could be a problem with parser
 
         print(f"{BLUE}[OPENAI TAG] SELECTED A PROMPT:{RESET} {YELLOW}{query_topic}{RESET}")
 
@@ -123,7 +124,7 @@ class LLM:
         prompt_branch = RunnableBranch(
             (lambda x: x["topic"] == "plot", PromptTemplate.from_template(temlate_for_plot_planner)),
             (lambda x: x["topic"] == "general", PromptTemplate.from_template(temlate_for_math_planner)),
-            PromptTemplate.from_template(temlate_for_math_planner) # default branch (must be included)
+            PromptTemplate.from_template(temlate_for_math_planner)  # default branch (must be included)
         )
 
         classifier_function = convert_pydantic_to_openai_function(TopicClassifier)
@@ -219,17 +220,30 @@ class LLM:
                       tagged_query_type="general",
                       llm="gpt-3.5-turbo-1106",
                       adapter_path="",
-                      save_plot_name="", # for the "coder_only" prompt strategies
-                      quantization_bits="no quantization", # quantization for local llm
+                      save_plot_name="",  # for the "coder_only" prompt strategies
+                      quantization_bits="no quantization",  # quantization for local llm
                       ):
+
         print(f"{BLUE}[{llm}] GENERATING CODE{RESET}: {YELLOW}{llm}{RESET}")
-        instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
-        if tagged_query_type == "plot" and not show_plot: # don't include plt.show() in the generated code
-            instruction_prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan, save_plot_name=save_plot_name)
+
+        if tagged_query_type == "general":
+            print(f"    {CYAN}General{RESET} prompt used.")
+            instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
+        else:  # "plot"
+            if show_plot:
+                # use `plt.show()` in the generated code
+                print(f"    {CYAN}Show plot{RESET} prompt used.")
+                instruction_prompt = self.prompts.generate_code_for_plot_show_prompt(df, user_query, plan)
+            else:
+                # don't include plt.show() in the generated code, save the image to `save_plot_name`
+                print(f"    {CYAN}Save plot{RESET} prompt used.")
+                instruction_prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan,
+                                                                                     save_plot_name=save_plot_name)
 
         if llm.startswith("gpt"):
             return GPTCoder().query(llm, instruction_prompt), instruction_prompt
-        elif llm == "codellama/CodeLlama-7b-Instruct-hf": # local llm
+
+        elif llm == "codellama/CodeLlama-7b-Instruct-hf":  # local llm
             answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
                                                                             instruction_prompt,
                                                                             already_loaded_model=self.local_coder_model,
@@ -237,12 +251,21 @@ class LLM:
                                                                             bit=quantization_bits)
             return answer, instruction_prompt
 
-        elif llm.startswith("WizardLM/WizardCoder-"): # under 34B
+        elif llm == "codellama/CodeLlama-7b-Python-hf":
+            if not isinstance(self.prompts, PromptsCoderOnlyInfillingForFunctionGeneration):
+                raise Exception("The prompt strategy must be 'coder_only_infilling_functions' for this model.")
+            answer, self.local_coder_model = CodeLlamaPythonCoder().query(llm,
+                                                                          instruction_prompt,
+                                                                          # this is already an infilling prompt
+                                                                          already_loaded_model=self.local_coder_model,
+                                                                          adapter_path=adapter_path,
+                                                                          bit=quantization_bits)
+
+        elif llm.startswith("WizardLM/WizardCoder-"):  # under 34B
             return WizardCoder().query(llm, instruction_prompt), instruction_prompt
 
-        elif llm == "ise-uiuc/Magicoder-S-CL-7B": # doesn't really work yet
+        elif llm == "ise-uiuc/Magicoder-S-CL-7B":  # doesn't really work yet
             return CodeLlamaInstructCoder().query(llm, instruction_prompt), instruction_prompt
-
 
     def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
         prompt = self.prompts.fix_code_prompt(df, user_query, code_to_be_fixed, error_message)
@@ -263,7 +286,7 @@ class LLM:
             for m in messages_local:
                 # ret_val += f"{m.role}: {m.content[0].text.value}\n"
 
-                if len(m.content) != 0 and hasattr(m.content[0], "text"): # and has attribute text
+                if len(m.content) != 0 and hasattr(m.content[0], "text"):  # and has attribute text
                     ret_val += f"{m.content[0].text.value}\n"
             return ret_val
 

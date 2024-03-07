@@ -83,10 +83,50 @@ class CodeLlamaInstructCoder(CoderLLM):
             # print(text)
 
             text = re.sub(r'\[INST\].*?\[/INST\]', '', text, flags=re.DOTALL)
-            print("[coder_llms.py] Text after regex:", text)
             return text
 
         return generate(already_loaded_model, prompt), already_loaded_model
+
+class CodeLlamaPythonCoder(CoderLLM):
+
+    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path="", bit="4") -> str:
+
+        model_id = "codellama/CodeLlama-7b-Python-hf"
+
+        if already_loaded_model is None:
+            already_loaded_model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                device_map={"": 0},
+                quantization_config=BitsAndBytesConfig(
+                    load_in_4bit= True if bit == "4" else False,
+                    load_in_8bit=True if bit == "8" else False,
+                    # bnb_8bit_compute_dtype=torch.float16 if bit == "8" else torch.bfloat16,
+                ),
+            )
+            if adapter_path != "":
+                adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
+                already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path)
+
+        already_loaded_model.eval()
+
+        max_new_tokens = 500
+        temperature = 1e-9
+
+        prompt = input_text
+
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        input_ids = tokenizer(prompt, return_tensors="pt")["input_ids"].to("cuda")
+        output = already_loaded_model.generate(
+            input_ids,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+        )
+        output = output[0].to("cpu")
+
+        filling = tokenizer.decode(output[input_ids.shape[1]:], skip_special_tokens=True)
+        final_result_function = prompt.replace("<FILL_ME>", filling)
+
+        return final_result_function, already_loaded_model
 
 class WizardCoder(CoderLLM):
 
