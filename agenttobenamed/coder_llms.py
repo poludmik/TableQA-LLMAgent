@@ -7,6 +7,7 @@ from langchain.schema import HumanMessage
 from peft import PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 from vllm import LLM, SamplingParams
+from .logger import *
 
 
 class CoderLLM:
@@ -40,15 +41,19 @@ class CodeLlamaInstructCoder(CoderLLM):
         print("isdir is false")
         return None, False # first training
 
-    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path="", bit="4") -> str:
+    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = "", bit: int = None) -> str:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        if bit:
+            print(f"    Model '{model_name}' is quantized with {CYAN}{bit} bits.{RESET}")
+
         if already_loaded_model is None:
             already_loaded_model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 device_map={"": 0},
                 quantization_config=BitsAndBytesConfig(
-                    load_in_4bit= True if bit == "4" else False,
-                    load_in_8bit=True if bit == "8" else False,
+                    load_in_4bit= True if bit == 4 else False,
+                    load_in_8bit= True if bit == 8 else False,
                     # bnb_4bit_compute_dtype=torch.bfloat16,
                     # bnb_4bit_use_double_quant=True,
                     # bnb_4bit_quant_type='nf4',

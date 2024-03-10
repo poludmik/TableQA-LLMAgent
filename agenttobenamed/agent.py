@@ -14,14 +14,14 @@ class AgentTBN:
                  max_debug_times: int = 2,
                  gpt_model="gpt-3.5-turbo-1106",
                  coder_model="gpt-3.5-turbo-1106",
-                 quantization_bits="no quantization", # for local coding LLMs
+                 quantization_bits=None, # for local coding LLMs
                  adapter_path="",
                  head_number=2,
                  prompt_strategy="simple",
                  tagging_strategy="openai",
                  add_column_description=False,
                  use_assistants_api=False,
-                 query_type=None,
+                 query_type=None, # fixes query type for all upcoming queries
                  ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
@@ -36,9 +36,14 @@ class AgentTBN:
         self.quantization_bits = quantization_bits
         self.max_debug_times = max_debug_times
 
-        self._plan = None
-        self._tagged_query_type = None if not query_type else query_type
+        # for skipping the reasoning part
+        self._user_set_plan = None
+        self._tagged_query_type = None
         self._prompt_user_for_planner = None
+
+        self.user_has_fixed_query_type = True if query_type else False
+        self.fixed_query_type = query_type
+        assert query_type in [None, "plot", "general"], "query_type must be either None, 'plot' or 'general'."
 
         self.provider = "openai"
         if not self.coder_model.startswith("gpt"):
@@ -76,18 +81,25 @@ class AgentTBN:
         return self._df
 
     def skip_reasoning_part(self, plan: str, tagged_query_type: str, prompt_user_for_planner: str):
-        self._plan = plan
+        self._user_set_plan = plan
         self._tagged_query_type = tagged_query_type
         self._prompt_user_for_planner = prompt_user_for_planner
-        if isinstance(self._plan, str) != isinstance(self._tagged_query_type, str):
+        if isinstance(self._user_set_plan, str) != isinstance(self._tagged_query_type, str):
             raise Exception("Both plan and tagged_query_type must be either None or a string.")
 
     def _reset_skip_reasoning_part(self):
-        self._plan = None
+        self._user_set_plan = None
         self._tagged_query_type = None
         self._prompt_user_for_planner = None
 
     def answer_query(self, query: str, show_plot=False, save_plot_path=None):
+        try:
+            return self._answer_query(query, show_plot, save_plot_path)
+        except Exception as e:
+            print(f"{RED}Error in answer_query(): {e}{RESET}")
+            return None, None
+
+    def _answer_query(self, query: str, show_plot=False, save_plot_path=None):
         """
         Additionally returns a dictionary with info:
             - Which prompts were used and where,
@@ -110,13 +122,16 @@ class AgentTBN:
             text_answer = self.llm_calls.pure_openai_assistant_answer(self._table_file_path, query, possible_plotname)
             return text_answer, details
 
-        if not self._tagged_query_type: # if not set by the user
+        if self.user_has_fixed_query_type: # if not set by the user
+            self._tagged_query_type = self.fixed_query_type
+        else:
             self._tagged_query_type = self.tag(query)
 
-        if self._plan is None and not self.prompt_strategy.startswith("coder_only"): # Not skipping the reasoning part
-            self._plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type)
+        plan = self._user_set_plan
+        if self._user_set_plan is None and not self.prompt_strategy.startswith("coder_only"): # Not skipping the reasoning part
+            plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type)
 
-        generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, self._plan,
+        generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, plan,
                                                                show_plot=show_plot,
                                                                tagged_query_type=self._tagged_query_type,
                                                                llm=self.coder_model,
@@ -161,7 +176,7 @@ class AgentTBN:
         plt.cla()
         plt.close()
 
-        details["plan"] = self._plan
+        details["plan"] = plan
         details["coder_prompt"] = coder_prompt
         details["prompt_user_for_planner"] = self._prompt_user_for_planner
         details["tagged_query_type"] = self._tagged_query_type

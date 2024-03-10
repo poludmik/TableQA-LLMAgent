@@ -221,7 +221,7 @@ class LLM:
                       llm="gpt-3.5-turbo-1106",
                       adapter_path="",
                       save_plot_name="",  # for the "coder_only" prompt strategies
-                      quantization_bits="no quantization",  # quantization for local llm
+                      quantization_bits=None,  # quantization for local llm
                       ):
 
         print(f"{BLUE}[{llm}] GENERATING CODE{RESET}: {YELLOW}{llm}{RESET}")
