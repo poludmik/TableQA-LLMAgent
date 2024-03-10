@@ -1,13 +1,14 @@
 import copy
+import pandas as pd
+import autopep8
 import re
 # import code # another way to use REPL
 import io
 import traceback
 import sys
 from contextlib import redirect_stdout
-from .logger import *
 
-import pandas as pd
+from .logger import *
 
 
 class Code:
@@ -37,7 +38,7 @@ class Code:
                      'xml.etree.ElementTree', 'builtins', 'os.system', 'os.popen', 'sys.modules',
                      '__import__', 'getattr', 'setattr', 'pickle.loads', 'execfile', 'exec', 'compile',
                      'input', 'ast.literal_eval'
-                     ] # TODO: add 'os'?
+                     ]  # TODO: add 'os'?
 
         # Use a regular expression to find all code segments enclosed in triple backticks with "python"
         if provider == "local":
@@ -68,10 +69,10 @@ class Code:
                 code_res = re.sub(r"\bdata\b", "df", code_res)
             # Comment out the df instantiation if it is present in the generated code
             code_res = re.sub(r"(?<![a-zA-Z0-9_-])df\s*=\s*pd\.DataFrame\((.*?)\)",
-                          "# The dataframe df has already been defined", code_res)
+                              "# The dataframe df has already been defined", code_res)
 
         if not show_plot:
-            if re.search(r"(?<!`)plt\.show\(\)(?!`)", code_res): # searches for plt.show() not enclosed in backticks
+            if re.search(r"(?<!`)plt\.show\(\)(?!`)", code_res):  # searches for plt.show() not enclosed in backticks
                 print(f"{RED}PLT.SHOW() in the code!!!{RESET}:")
                 code_res = code_res.replace("plt.show()", "")
 
@@ -107,7 +108,8 @@ class Code:
                 results = copy.deepcopy(output.getvalue())
                 if results != "" or tagged_query_type == "plot":
                     break
-                print(f"{RED}{i}. Empty exec() output for the 'general' query type!{RESET}") # caused by no ```python  ``` in gpt's response?
+                print(
+                    f"{RED}{i}. Empty exec() output for the 'general' query type!{RESET}")  # caused by no ```python  ``` in gpt's response?
                 if i == 2:
                     return "", "empty exec()"
             output.truncate(0)
@@ -122,7 +124,6 @@ class Code:
             print(f"{RED}   CODE PRODUCED AN ERROR{RESET}:\n{MAGENTA}     {exec_traceback}{RESET}\n")
             return "ERROR", exec_traceback
 
-
     @staticmethod
     def prepend_imports(code_str: str) -> str:
         return f"import pandas as pd\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n{code_str}"
@@ -130,3 +131,8 @@ class Code:
     @staticmethod
     def append_result_storage(code_str: str) -> str:
         return code_str + "\n\n" + "result = solve(df)\nprint(result)"
+
+    @staticmethod
+    def format_to_pep8(code_str: str) -> str:
+        # Removes redundant whitespaces and formats the code to PEP8
+        return autopep8.fix_code(code_str)

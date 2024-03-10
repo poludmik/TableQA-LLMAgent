@@ -149,6 +149,8 @@ class AgentTBN:
         if self.prompt_strategy.endswith("functions"):
             code_to_execute = Code.append_result_storage(code_to_execute)
 
+        code_to_execute = Code.format_to_pep8(code_to_execute)
+
         res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=self._tagged_query_type)
         debug_prompt = ""
 
