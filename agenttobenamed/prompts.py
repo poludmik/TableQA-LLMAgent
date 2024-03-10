@@ -582,14 +582,15 @@ def solve(df):
 
 
 class PromptsCoderOnlyInfillingForFunctionGeneration:
-    generate_code = '''def solve(df: pd.DataFrame):
+    generate_code = '''```python
+def solve(df: pd.DataFrame):
     """ Function to solve the user query: '{input}'.
 
     DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
     {df_head}
     {column_description}
 
-    Basic ibraries are already imported: pandas as pd and numpy as np.
+    Basic ibraries are already imported: pandas as pd and numpy as np. No print() statements are used.
 
     Args:
         df: pandas DataFrame
@@ -599,9 +600,11 @@ class PromptsCoderOnlyInfillingForFunctionGeneration:
     """
     <FILL_ME>
     return result
+```
 '''
 
-    generate_code_for_plot_show = '''def solve(df: pd.DataFrame):
+    generate_code_for_plot_show = '''```python
+def solve(df: pd.DataFrame):
     """ Function to create and show the plot to solve the user query: '{input}'.
 
     DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
@@ -618,9 +621,11 @@ class PromptsCoderOnlyInfillingForFunctionGeneration:
     """
     <FILL_ME>
     plt.show()
+```
 '''
 
-    generate_code_for_plot_save = '''def solve(df: pd.DataFrame):
+    generate_code_for_plot_save = '''```python
+def solve(df: pd.DataFrame):
     """ Function to create and save the plot to solve the user query: '{input}'.
 
     DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
@@ -638,6 +643,7 @@ class PromptsCoderOnlyInfillingForFunctionGeneration:
     """
     <FILL_ME>
     plt.savefig('{save_plot_name}')
+```
 '''
 
     def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
@@ -652,22 +658,28 @@ class PromptsCoderOnlyInfillingForFunctionGeneration:
 
     def format_generate_code_for_plot_show_prompt(self, head_number, df, user_query, plan, column_description):
         assert not plan, "This prompt strategy does not support generating code from a plan."
+        column_description, df_head = self.prepend_column_desc_and_df_head(column_description, df.head(head_number))
         return self.generate_code_for_plot_show.format(input=user_query, head_number=head_number,
-                                                       df_head=df.head(head_number),
+                                                       df_head=df_head,
                                                        column_description=column_description,
                                                        plan=plan)
 
     def format_generate_code_prompt(self, head_number, df, user_query, plan, column_description):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        return self.generate_code.format(input=user_query, df_head=df.head(head_number), plan=plan,
+        column_description, df_head = self.prepend_column_desc_and_df_head(column_description, df.head(head_number))
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan,
                                          head_number=head_number, column_description=column_description)
 
     def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan, column_description,
                                                   save_plot_name=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
-        return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan,
+        column_description, df_head = self.prepend_column_desc_and_df_head(column_description, df.head(head_number))
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan,
                                                        head_number=head_number, column_description=column_description,
                                                        save_plot_name=save_plot_name)
+    @staticmethod
+    def prepend_column_desc_and_df_head(column_description, df_head):
+        return '\t' + column_description.replace('\n', '\n\t'), '\t' + df_head.to_string().replace('\n', '\n\t')
 
 
 class Prompts:

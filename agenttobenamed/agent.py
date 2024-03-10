@@ -96,7 +96,7 @@ class AgentTBN:
         try:
             return self._answer_query(query, show_plot, save_plot_path)
         except Exception as e:
-            print(f"{RED}Error in answer_query(): {e}{RESET}")
+            print(f"Error in answer_query(): {RED}{e}{RESET}")
             return None, None
 
     def _answer_query(self, query: str, show_plot=False, save_plot_path=None):
@@ -140,8 +140,6 @@ class AgentTBN:
                                                                save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
                                                                )
 
-        # print(f"Generated code: {generated_code}")
-
         code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
@@ -150,6 +148,8 @@ class AgentTBN:
             code_to_execute = Code.append_result_storage(code_to_execute)
 
         code_to_execute = Code.format_to_pep8(code_to_execute)
+
+        print(f"{YELLOW}>>>>>>> Formatted code:{RESET}\n{code_to_execute}")
 
         res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=self._tagged_query_type)
         debug_prompt = ""

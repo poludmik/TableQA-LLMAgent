@@ -14,12 +14,14 @@ class CoderLLM:
     def query(self, model_name: str, input_text: str) -> str:
         pass
 
+
 class GPTCoder(CoderLLM):
     def query(self, model_name: str, input_text: str) -> str:
         chat_model = ChatOpenAI(model=model_name, temperature=0)
         messages = [HumanMessage(content=input_text)]
         res = chat_model.invoke(messages).content
         return res
+
 
 class CodeLlamaInstructCoder(CoderLLM):
 
@@ -29,19 +31,20 @@ class CodeLlamaInstructCoder(CoderLLM):
             is_completed = exists(join(checkpoint_dir, 'completed'))
             if is_completed:
                 print("what")
-                return None, True # already finished
+                return None, True  # already finished
             max_step = 0
             for filename in os.listdir(checkpoint_dir):
                 if isdir(join(checkpoint_dir, filename)) and filename.startswith('checkpoint'):
                     max_step = max(max_step, int(filename.replace('checkpoint-', '')))
-            if max_step == 0: return None, is_completed # training started, but no checkpoint
+            if max_step == 0: return None, is_completed  # training started, but no checkpoint
             checkpoint_dir = join(checkpoint_dir, f'checkpoint-{max_step}')
             print(f"Found a previous checkpoint at: {checkpoint_dir}")
-            return checkpoint_dir, is_completed # checkpoint found!
+            return checkpoint_dir, is_completed  # checkpoint found!
         print("isdir is false")
-        return None, False # first training
+        return None, False  # first training
 
-    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = "", bit: int = None) -> str:
+    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = "",
+              bit: int = None) -> str:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         if bit:
@@ -52,8 +55,8 @@ class CodeLlamaInstructCoder(CoderLLM):
                 model_name,
                 device_map={"": 0},
                 quantization_config=BitsAndBytesConfig(
-                    load_in_4bit= True if bit == 4 else False,
-                    load_in_8bit= True if bit == 8 else False,
+                    load_in_4bit=True if bit == 4 else False,
+                    load_in_8bit=True if bit == 8 else False,
                     # bnb_4bit_compute_dtype=torch.bfloat16,
                     # bnb_4bit_use_double_quant=True,
                     # bnb_4bit_quant_type='nf4',
@@ -92,19 +95,23 @@ class CodeLlamaInstructCoder(CoderLLM):
 
         return generate(already_loaded_model, prompt), already_loaded_model
 
-class CodeLlamaPythonCoder(CoderLLM):
 
-    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path="", bit="4") -> str:
+class CodeLlamaBaseCoder(CoderLLM):
 
-        model_id = "codellama/CodeLlama-7b-Python-hf"
+    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = "",
+              bit: int = None) -> str:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        if bit:
+            print(f"    Model '{model_name}' is quantized with {CYAN}{bit} bits.{RESET}")
 
         if already_loaded_model is None:
             already_loaded_model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 device_map={"": 0},
                 quantization_config=BitsAndBytesConfig(
-                    load_in_4bit= True if bit == "4" else False,
-                    load_in_8bit=True if bit == "8" else False,
+                    load_in_4bit=True if bit == 4 else False,
+                    load_in_8bit=True if bit == 8 else False,
                     # bnb_8bit_compute_dtype=torch.float16 if bit == "8" else torch.bfloat16,
                 ),
             )
@@ -119,19 +126,24 @@ class CodeLlamaPythonCoder(CoderLLM):
 
         prompt = input_text
 
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
-        input_ids = tokenizer(prompt, return_tensors="pt")["input_ids"].to("cuda")
-        output = already_loaded_model.generate(
-            input_ids,
-            max_new_tokens=max_new_tokens,
-            temperature=temperature,
-        )
-        output = output[0].to("cpu")
+        inputs = tokenizer(prompt, return_tensors="pt").to('cuda')
 
-        filling = tokenizer.decode(output[input_ids.shape[1]:], skip_special_tokens=True)
-        final_result_function = prompt.replace("<FILL_ME>", filling)
+        output = already_loaded_model.generate(
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            max_new_tokens=max_new_tokens,
+        )
+
+        text = tokenizer.decode(output[0], skip_special_tokens=True)
+
+        parts = prompt.split("<FILL_ME>")
+        removed_fill_me = parts[0] + parts[1]
+        first_n_chars = len(removed_fill_me)
+        text = text[first_n_chars:]
+        final_result_function = parts[0] + text + parts[1]
 
         return final_result_function, already_loaded_model
+
 
 class WizardCoder(CoderLLM):
 
@@ -154,7 +166,7 @@ class WizardCoder(CoderLLM):
 
             problem_instruction = [prompt]
             # stop_tokens = ['</s>'] # for the 34B model
-            stop_tokens = ['<|endoftext|>'] # for 1B, 3B or 15B models
+            stop_tokens = ['<|endoftext|>']  # for 1B, 3B or 15B models
             sampling_params = SamplingParams(temperature=temperature, top_p=1, max_tokens=max_new_tokens,
                                              stop=stop_tokens)
             completions = llm.generate(problem_instruction, sampling_params)
@@ -169,6 +181,7 @@ class WizardCoder(CoderLLM):
 
         return evaluate_vllm(input_text)
 
+
 class Magicoder(CoderLLM):
 
     def query(self, model_name: str, input_text: str) -> str:
@@ -182,7 +195,8 @@ class Magicoder(CoderLLM):
 
         sampling_params = SamplingParams(temperature=0.0, top_p=0.95, max_tokens=2048)
 
-        llm = LLM(model="TheBloke/Magicoder-S-DS-6.7B-AWQ", quantization="AWQ", dtype="auto", gpu_memory_utilization=0.95, max_model_len=8192)
+        llm = LLM(model="TheBloke/Magicoder-S-DS-6.7B-AWQ", quantization="AWQ", dtype="auto",
+                  gpu_memory_utilization=0.95, max_model_len=8192)
 
         outputs = llm.generate(prompt, sampling_params)
 

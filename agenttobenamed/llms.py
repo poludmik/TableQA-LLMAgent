@@ -251,15 +251,16 @@ class LLM:
                                                                             bit=quantization_bits)
             return answer, instruction_prompt
 
-        elif llm == "codellama/CodeLlama-7b-Python-hf":
-            if not isinstance(self.prompts, PromptsCoderOnlyInfillingForFunctionGeneration):
+        elif llm == "codellama/CodeLlama-7b-hf":
+            if not isinstance(self.prompts.strategy, PromptsCoderOnlyInfillingForFunctionGeneration):
                 raise Exception("The prompt strategy must be 'coder_only_infilling_functions' for this model.")
-            answer, self.local_coder_model = CodeLlamaPythonCoder().query(llm,
+            answer, self.local_coder_model = CodeLlamaBaseCoder().query(llm,
                                                                           instruction_prompt,
                                                                           # this is already an infilling prompt
                                                                           already_loaded_model=self.local_coder_model,
                                                                           adapter_path=adapter_path,
                                                                           bit=quantization_bits)
+            return answer, instruction_prompt
 
         elif llm.startswith("WizardLM/WizardCoder-"):  # under 34B
             return WizardCoder().query(llm, instruction_prompt), instruction_prompt
