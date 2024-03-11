@@ -679,7 +679,8 @@ def solve(df: pd.DataFrame):
                                                        save_plot_name=save_plot_name)
     @staticmethod
     def prepend_column_desc_and_df_head(column_description, df_head):
-        return '\t' + column_description.replace('\n', '\n\t'), '\t' + df_head.to_string().replace('\n', '\n\t')
+        tab = " " * 4
+        return tab + column_description.replace('\n', '\n'+tab), tab + df_head.to_string().replace('\n', '\n'+tab)
 
 
 class Prompts:
