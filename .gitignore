@@ -11,3 +11,4 @@ evaluation/conf/config_collect_functions.yaml
 evaluation/conf/config_collect_skip_reasoning.yaml
 /dataset/Text2Analysis/
 testing/
+testing_copy/

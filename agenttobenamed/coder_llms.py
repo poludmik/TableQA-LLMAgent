@@ -69,9 +69,19 @@ class CodeLlamaInstructCoder(CoderLLM):
                 already_loaded_model.eval()
 
         already_loaded_model.eval()
-        prompt = f"<s>[INST] {input_text} [/INST]"
+        if bool(re.search(r"CodeLlama-\d+b-Instruct-hf", model_name)):
+            print(f"Formatting prompt for {CYAN}Instruct{RESET} model.")
+            prompt = f"<s>[INST] {input_text} [/INST]"
+        elif bool(re.search(r"CodeLlama-\d+b-Python-hf", model_name)):
+            print(f"Formatting prompt for {CYAN}Python{RESET} model.")
+            prompt = "<s>" + input_text
+        elif bool(re.search(r"CodeLlama-\d+b-hf", model_name)):
+            print(f"Formatting prompt for {CYAN}Base{RESET} model.")
+            prompt = "<s>" + input_text
+        else:
+            raise ValueError(f"Model name '{model_name}' is not recognized [coder_llms.py].")
 
-        max_new_tokens = 500
+        max_new_tokens = 300
         temperature = 1e-9
 
         def generate(m, user_question, max_new_tokens_local=max_new_tokens, top_p=1, temp=temperature):
@@ -88,9 +98,10 @@ class CodeLlamaInstructCoder(CoderLLM):
                 # )
             )
             text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-            # print(text)
+            print("Text:****\n", text, "****")
 
-            text = re.sub(r'\[INST\].*?\[/INST\]', '', text, flags=re.DOTALL)
+            if bool(re.search(r"CodeLlama-\d+b-Instruct-hf", model_name)):
+                text = re.sub(r'\[INST\].*?\[/INST\]', '', text, flags=re.DOTALL)
             return text
 
         return generate(already_loaded_model, prompt), already_loaded_model

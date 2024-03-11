@@ -24,9 +24,24 @@ class Code:
 
     # Method to clean the LLM response, and extract the code.
     @staticmethod
-    def extract_code(response: str, provider: str, show_plot=False) -> str:
+    def extract_code(response: str, provider: str, show_plot=False, model_name: str = "") -> str:
         # Use re.sub to replace all occurrences of the <|im_sep|> with the ```.
         response = re.sub(re.escape("<|im_sep|>"), "```", response)
+
+        if "Python-hf" in model_name:
+            pattern = r"(return\s+.*$|^\s*(plt\.show\(\s*\)|plt\.savefig\(\s*.+\s*\))\s*$)"
+            match = re.search(pattern, response, flags=re.MULTILINE)
+            print("match:", match)
+
+            if match:
+                print("Python-hf model returned a match for the pattern - cutting")
+                cut_off_point = match.end()
+                print("cut_off_point:", cut_off_point)
+                response = response[:cut_off_point]
+                if "```" in response:
+                    response = response + "\n```"
+            else:
+                print("No match found.")
 
         # Define a blacklist of Python keywords and functions that are not allowed
         blacklist = ['subprocess', 'sys', 'eval', 'exec', 'socket', 'urllib',

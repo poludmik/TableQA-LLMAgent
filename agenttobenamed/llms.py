@@ -241,6 +241,7 @@ class LLM:
                                                                                      save_plot_name=save_plot_name)
 
         if llm.startswith("gpt"):
+            print("instruction_prompt:", instruction_prompt)
             return GPTCoder().query(llm, instruction_prompt), instruction_prompt
 
         elif llm == "codellama/CodeLlama-7b-Instruct-hf":  # local llm
@@ -252,9 +253,21 @@ class LLM:
             return answer, instruction_prompt
 
         elif llm == "codellama/CodeLlama-7b-hf":
-            if not isinstance(self.prompts.strategy, PromptsCoderOnlyInfillingForFunctionGeneration):
+            if not isinstance(self.prompts.strategy, PromptsCoderOnlyInfillingForFunctionGeneration) and \
+                not isinstance(self.prompts.strategy, PromptsCoderOnlyCompletionForFunctionGeneration):
                 raise Exception("The prompt strategy must be 'coder_only_infilling_functions' for this model.")
+
             answer, self.local_coder_model = CodeLlamaBaseCoder().query(llm,
+                                                                          instruction_prompt,
+                                                                          already_loaded_model=self.local_coder_model,
+                                                                          adapter_path=adapter_path,
+                                                                          bit=quantization_bits)
+            return answer, instruction_prompt
+
+        elif llm == "codellama/CodeLlama-7b-Python-hf":
+            if not isinstance(self.prompts.strategy, PromptsCoderOnlyCompletionForFunctionGeneration):
+                raise Exception("The prompt strategy must be 'coder_only_infilling_functions' for this model.")
+            answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
                                                                           instruction_prompt,
                                                                           # this is already an infilling prompt
                                                                           already_loaded_model=self.local_coder_model,

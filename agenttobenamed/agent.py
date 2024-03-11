@@ -140,10 +140,12 @@ class AgentTBN:
                                                                save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
                                                                )
 
-        code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot)  # 'local' removes the definition of a new df if there is one
+        code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot, model_name=self.coder_model)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
-        code_to_execute = Code.prepend_imports(code_to_execute)
+        if "import pandas as pd" not in code_to_execute or "import matplotlib.pyplot as plt" not in code_to_execute:
+            code_to_execute = Code.prepend_imports(code_to_execute)
+
         if self.prompt_strategy.endswith("functions"):
             code_to_execute = Code.append_result_storage(code_to_execute)
 
@@ -157,9 +159,7 @@ class AgentTBN:
         count = 0
         errors = []
 
-        if exception == "empty exec()":
-            res = "ERROR"
-            errors.append(exception)
+        res = "ERROR" if exception == "empty exec()" else res
 
         while res == "ERROR" and count < self.max_debug_times:
             errors.append(exception)
@@ -167,11 +167,10 @@ class AgentTBN:
             code_to_execute = Code.extract_code(regenerated_code, provider=self.provider)
             res, exception = Code.execute_generated_code(code_to_execute, self.df, self._tagged_query_type)
             count += 1
-        errors = errors + exception if res == "ERROR" or not code_to_execute.strip() else []
+        errors = errors + [exception] if res == "ERROR" or not code_to_execute.strip() else []
 
         if res == "" and self._tagged_query_type == "general":
             print(f"{RED}Empty output from exec() with the text-intended answer!{RESET}")
-
 
         # to remove outputs of the previous plot, works with show_plot=True, because plt.show() waits for user to close the window
         plt.clf()
