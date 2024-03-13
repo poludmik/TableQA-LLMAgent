@@ -222,6 +222,7 @@ class LLM:
                       adapter_path="",
                       save_plot_name="",  # for the "coder_only" prompt strategies
                       quantization_bits=None,  # quantization for local llm
+                      collect_input_prompts=False
                       ):
 
         print(f"{BLUE}[{llm}] GENERATING CODE{RESET}: {YELLOW}{llm}{RESET}")
@@ -239,6 +240,9 @@ class LLM:
                 print(f"    {CYAN}Save plot{RESET} prompt used.")
                 instruction_prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan,
                                                                                      save_plot_name=save_plot_name)
+
+        if collect_input_prompts:
+            return "", instruction_prompt
 
         if llm.startswith("gpt"):
             print("instruction_prompt:", instruction_prompt)
