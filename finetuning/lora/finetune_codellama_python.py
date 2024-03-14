@@ -10,7 +10,7 @@ from peft import (
     prepare_model_for_kbit_training,
     LoraConfig
 )
-from trl import SFTTrainer
+from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 import os
 from agenttobenamed.logger import *
 import wandb
@@ -131,6 +131,11 @@ def main(cfg):
         run_name=cfg.hyperparameters.run_name,  # name of the W&B run (optional)
     )
 
+    response_template = """(typed e.g. float, DataFrame, list, string, dict, etc.).
+    \"\"\"
+    """
+
+    collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
 
     trainer = SFTTrainer(
         model=model,
@@ -140,6 +145,7 @@ def main(cfg):
         formatting_func=formatting_func,
         max_seq_length=cfg.hyperparameters.trainer.max_seq_length,
         tokenizer=tokenizer,
+        data_collator=collator,
         args=training_args
     )
 
