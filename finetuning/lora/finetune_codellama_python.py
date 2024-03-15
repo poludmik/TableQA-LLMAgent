@@ -2,7 +2,7 @@ import torch
 import transformers
 import argparse
 
-from omegaconf import omegaconf
+from omegaconf import OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from datasets import load_dataset
 from peft import (
@@ -15,23 +15,21 @@ import os
 from agenttobenamed.logger import *
 import wandb
 from utils import *
-import hydra
+# import hydra
+import yaml
+import time
 
-# os.environ["WANDB_PROJECT"]="codellama_LoRA"
-
-@hydra.main(config_path="config/", config_name="LoRA_params.yaml", version_base="1.1")
-def main(cfg):
-
-    # wandb.config = omegaconf.OmegaConf.to_container(cfg)
-    wandb.config = omegaconf.OmegaConf.to_container(cfg, resolve=True)
+def main(config_path: str = "config.yaml"):
+    cfg = DotDict(load_config(config_path))
     wandb.init(entity=cfg.wandb.entity,
                project=cfg.wandb.project,
-               config=wandb.config,
+               config=dict(cfg),
                job_type="training")
 
     seed = cfg.hyperparameters.seed
 
-    model_name = "codellama/CodeLlama-7b-Python-hf"
+    # model_name = "codellama/CodeLlama-7b-Python-hf"
+    model_name = "facebook/opt-350m"
 
     quantization_config = BitsAndBytesConfig(load_in_4bit=False)
 
@@ -44,17 +42,20 @@ def main(cfg):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     repo = "poludmik/code_completion_for_data_analysis"
-    dataset = load_dataset(repo, split="train")  # everything is in the train split on HF
+    dataset = load_dataset("imdb", split="train")
+    # dataset = load_dataset(repo, split="train")  # everything is in the train split on HF
     # print(dataset["train"][0])
 
     split_ratio = cfg.hyperparameters.split_ratio  # 10% for validation
     num_validation_samples = int(len(dataset) * split_ratio)
 
     split_dataset = dataset.train_test_split(test_size=num_validation_samples, seed=seed)
+    small_dataset = split_dataset['test'].select(range(40))
 
     # Access the training and validation sets
     train_dataset = split_dataset['train']
-    validation_dataset = split_dataset['test']
+    # validation_dataset = split_dataset['test']
+    validation_dataset = small_dataset
 
     print("Train dataset size:", len(train_dataset))
     print("Validation dataset size:", len(validation_dataset))
@@ -90,7 +91,6 @@ def main(cfg):
     # op = tokenizer.decode(generation_output[0], skip_special_tokens=True)
     # print(op)
 
-
     lora_config = LoraConfig(
         r=cfg.hyperparameters.lora_config.r,
         lora_alpha=cfg.hyperparameters.lora_config.alpha,
@@ -100,12 +100,12 @@ def main(cfg):
         task_type=cfg.hyperparameters.lora_config.task_type,
     )
 
-    tokenizer.add_special_tokens({"pad_token": "<PAD>"})
-    model.resize_token_embeddings(len(tokenizer))
+    # tokenizer.add_special_tokens({"pad_token": "<PAD>"})
+    tokenizer.pad_token = tokenizer.eos_token
+    # model.resize_token_embeddings(len(tokenizer))
 
     model = prepare_model_for_kbit_training(model)
     model = get_peft_model(model, lora_config)
-
 
     trainable, total = model.get_nb_trainable_parameters()
     print(f"Trainable: {YELLOW}{trainable}{RESET} | total: {BLUE}{total}{RESET} | Percentage: {YELLOW}{trainable / total * 100:.4f}{RESET}%")
@@ -121,7 +121,7 @@ def main(cfg):
         logging_steps=cfg.hyperparameters.logging_steps, # how often to log to W&B
         max_grad_norm=cfg.hyperparameters.max_grad_norm,
         max_steps=cfg.hyperparameters.max_steps,
-        warmup_ratio=cfg.hyperparameters.warmup_ratio,
+        # warmup_ratio=cfg.hyperparameters.warmup_ratio,
         group_by_length=cfg.hyperparameters.group_by_length,
         lr_scheduler_type=cfg.hyperparameters.lr_scheduler_type,
         ddp_find_unused_parameters=cfg.hyperparameters.ddp_find_unused_parameters,
@@ -131,11 +131,8 @@ def main(cfg):
         run_name=cfg.hyperparameters.run_name,  # name of the W&B run (optional)
     )
 
-    response_template = """(typed e.g. float, DataFrame, list, string, dict, etc.).
-    \"\"\"
-    """
-
-    collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
+    # response_template = """(typed e.g. float, DataFrame, list, string, dict, etc.).\n    \"\"\"\n    """
+    # collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
 
     trainer = SFTTrainer(
         model=model,
@@ -145,7 +142,7 @@ def main(cfg):
         formatting_func=formatting_func,
         max_seq_length=cfg.hyperparameters.trainer.max_seq_length,
         tokenizer=tokenizer,
-        data_collator=collator,
+        # data_collator=collator,
         args=training_args
     )
 
@@ -155,22 +152,23 @@ def main(cfg):
         trainer=trainer,
         tokenizer=tokenizer,
         val_dataset=validation_dataset,
-        nth=cfg.hyperparameters.callback_nth, # always select nth sample from the validation dataset
+        num_samples=cfg.hyperparameters.callback_nth, # always select nth sample from the validation dataset
     )
 
     # Add the callback to the trainer
-    trainer.add_callback(progress_callback)
-
+    # trainer.add_callback(progress_callback)
 
     # We will also pre-process the model by upcasting the layer norms in float 32 for more stable training
     for name, module in trainer.model.named_modules():
         if "norm" in name:
             module.to(torch.float32)
 
-
+    print(f"{YELLOW}Starting training{RESET}")
     trainer.train()
     trainer.save_model(f"{cfg.hyperparameters.output_dir}/final")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, default="finetuning/lora/config/LoRA_params.yaml", help="Path to the config file.")
+    main(parser.parse_args().config)

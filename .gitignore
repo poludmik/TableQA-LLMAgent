@@ -15,3 +15,6 @@ testing_copy/
 dataset/completion_finetuning_data/*
 dataset/completion_finetuning_data/merge_t2a_and_250.py
 wandb/
+venv/
+copied/
+finetuning/lora/cp/

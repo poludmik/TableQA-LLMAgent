@@ -1,14 +1,13 @@
 from transformers.integrations import WandbCallback
 import pandas as pd
 from agenttobenamed.logger import *
-
+import yaml
 
 def decode_predictions(tokenizer, predictions):
     labels = tokenizer.batch_decode(predictions.label_ids)
     logits = predictions.predictions.argmax(axis=-1)
     prediction_text = tokenizer.batch_decode(logits)
     return {"labels": labels, "predictions": prediction_text}
-
 
 class WandbPredictionProgressCallback(WandbCallback):
     """Custom WandbCallback to log model predictions during training.
@@ -26,9 +25,8 @@ class WandbPredictionProgressCallback(WandbCallback):
           the validation dataset for generating predictions. Defaults to 100.
         freq (int, optional): Frequency of logging. Defaults to 2.
     """
-
     def __init__(self, trainer, tokenizer, val_dataset,
-                 num_samples=100, freq=2, nth=30):
+                 num_samples=100, freq=1):
         """Initializes the WandbPredictionProgressCallback instance.
 
         Args:
@@ -40,21 +38,20 @@ class WandbPredictionProgressCallback(WandbCallback):
               the validation dataset for generating predictions.
               Defaults to 100.
             freq (int, optional): Frequency of logging. Defaults to 2.
-            nth (int, optional): The nth sample to select from the validation
         """
         super().__init__()
         self.trainer = trainer
         self.tokenizer = tokenizer
-        # self.sample_dataset = val_dataset.select(range(num_samples))
-        self.sample_dataset = val_dataset[nth]
+        self.sample_dataset = val_dataset.select(range(num_samples))
+        # self.sample_dataset.remove_columns("output")
         self.freq = freq
+
 
     def on_evaluate(self, args, state, control, **kwargs):
         super().on_evaluate(args, state, control, **kwargs)
-
         # control the frequency of logging by logging the predictions
         # every `freq` epochs
-        # if state.epoch % self.freq == 0:
+        print(f"\nEpoch callback:", state.epoch)
 
         # generate predictions
         predictions = self.trainer.predict(self.sample_dataset)
@@ -62,11 +59,12 @@ class WandbPredictionProgressCallback(WandbCallback):
         predictions = decode_predictions(self.tokenizer, predictions)
         # add predictions to a wandb.Table
         predictions_df = pd.DataFrame(predictions)
+        print(predictions_df.head())
         predictions_df["epoch"] = state.epoch
         records_table = self._wandb.Table(dataframe=predictions_df)
         # log the table to wandb
-        self._wandb.log({"sample_completion": records_table})
-
+        self._wandb.log({"sample_predictions": records_table})
+        print(f"\nEpoch {state.epoch} completed. Logged predictions to W&B.")
 
 def print_trainable_parameters(m):
     """
@@ -86,8 +84,25 @@ def print_trainable_parameters(m):
 eos_token = "</s>"
 
 def formatting_func(prompt):
-    output = []
-    for d, s in zip(prompt["input"], prompt["output"]):
-        op = f"{d}{s}{eos_token}"
-        output.append(op)
-    return output
+    return prompt["text"]
+    # output = []
+    # for d, s in zip(prompt["input"], prompt["output"]):
+    #     op = f"{d}{s}{eos_token}"
+    #     output.append(op)
+    # return output
+
+
+class DotDict(dict):
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __init__(self, dct):
+        for key, value in dct.items():
+            if hasattr(value, 'keys'):
+                value = DotDict(value)
+            self[key] = value
+
+def load_config(yaml_file_path):
+    with open(yaml_file_path, 'r') as file:
+        return yaml.safe_load(file)
