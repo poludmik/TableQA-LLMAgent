@@ -3,6 +3,17 @@ import pandas as pd
 from agenttobenamed.logger import *
 import yaml
 
+from datetime import datetime
+
+def get_readable_datetime_string():
+    """
+    Returns the current date and time in a readable format without the year.
+    Format: Month Day, Hour:Minute:Second (e.g., Mar 15, 14:23:40)
+    """
+    now = datetime.now()
+    readable_format = now.strftime("%b %d, %H:%M:%S")
+    return readable_format
+
 def decode_predictions(tokenizer, predictions):
     labels = tokenizer.batch_decode(predictions.label_ids)
     logits = predictions.predictions.argmax(axis=-1)
@@ -83,12 +94,12 @@ def print_trainable_parameters(m):
 eos_token = "</s>"
 
 def formatting_func(prompt):
-    return prompt["text"]
-    # output = []
-    # for d, s in zip(prompt["input"], prompt["output"]):
-    #     op = f"{d}# Code:\n    {s}{eos_token}"
-    #     output.append(op)
-    # return output
+    # return prompt["text"]
+    output = []
+    for d, s in zip(prompt["input"], prompt["output"]):
+        op = f"{d}# Code:\n    {s}{eos_token}"
+        output.append(op)
+    return output
 
 
 class DotDict(dict):

@@ -1,3 +1,5 @@
+import random
+
 import torch
 import transformers
 import argparse
@@ -24,12 +26,14 @@ def main(config_path: str = "config.yaml"):
     wandb.init(entity=cfg.wandb.entity,
                project=cfg.wandb.project,
                config=dict(cfg),
-               job_type="training")
+               job_type="training",
+               name=cfg.hyperparameters.run_name + ": " + get_readable_datetime_string(),
+               )
 
     seed = cfg.hyperparameters.seed
 
-    # model_name = "codellama/CodeLlama-7b-Python-hf"
-    model_name = "facebook/opt-350m"
+    model_name = "codellama/CodeLlama-7b-Python-hf"
+    # model_name = "facebook/opt-350m"
 
     quantization_config = BitsAndBytesConfig(load_in_4bit=False)
 
@@ -41,26 +45,27 @@ def main(config_path: str = "config.yaml"):
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
+    print(f"{YELLOW}Model and tokenizer loaded{RESET}")
+
     repo = "poludmik/code_completion_for_data_analysis"
-    dataset = load_dataset("imdb", split="train")
-    # dataset = load_dataset(repo, split="train")  # everything is in the train split on HF
+    # dataset = load_dataset("imdb", split="train")
+    dataset = load_dataset(repo, split="train")  # everything is in the train split on HF
     # print(dataset["train"][0])
 
-    split_ratio = cfg.hyperparameters.split_ratio  # 10% for validation
+    split_ratio = cfg.hyperparameters.split_ratio  # 1% for validation
     num_validation_samples = int(len(dataset) * split_ratio)
 
     split_dataset = dataset.train_test_split(test_size=num_validation_samples, seed=seed)
-    small_dataset = split_dataset['test'].select(range(40))
+    # small_dataset = split_dataset['test'].select(range(40))
 
     # Access the training and validation sets
     train_dataset = split_dataset['train']
-    # validation_dataset = split_dataset['test']
-    validation_dataset = small_dataset
+    validation_dataset = split_dataset['test']
+    # validation_dataset = small_dataset
     print(validation_dataset)
 
     print("Train dataset size:", len(train_dataset))
     print("Validation dataset size:", len(validation_dataset))
-
 
     # def formatting_prompts_func(example):
     #     output_texts = []
@@ -129,11 +134,12 @@ def main(config_path: str = "config.yaml"):
         # eval_accumulation_steps=cfg.hyperparameters.eval_accumulation_steps,
         # per_device_eval_batch_size=cfg.hyperparameters.per_device_eval_batch_size,
         report_to="wandb",  # enable logging to W&B
-        run_name=cfg.hyperparameters.run_name,  # name of the W&B run (optional)
+        # run_name=cfg.hyperparameters.run_name + "_id" + str(random.randint(0, 1000000)),  # name of the W&B run (optional)
+        run_name=cfg.hyperparameters.run_name,
     )
 
-    # response_template = """(typed e.g. float, DataFrame, list, string, dict, etc.).\n    \"\"\"\n    """
-    # collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
+    response_template = """# Code:"""
+    collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
 
     trainer = SFTTrainer(
         model=model,
@@ -143,21 +149,21 @@ def main(config_path: str = "config.yaml"):
         formatting_func=formatting_func,
         max_seq_length=cfg.hyperparameters.trainer.max_seq_length,
         tokenizer=tokenizer,
-        # data_collator=collator,
+        data_collator=collator,
         args=training_args
     )
 
 
     # Instantiate the WandbPredictionProgressCallback
-    progress_callback = WandbPredictionProgressCallback(
-        trainer=trainer,
-        tokenizer=tokenizer,
-        val_dataset=validation_dataset,
-        # num_samples=cfg.hyperparameters.callback_nth, # always select nth sample from the validation dataset
-    )
+    # progress_callback = WandbPredictionProgressCallback(
+    #     trainer=trainer,
+    #     tokenizer=tokenizer,
+    #     val_dataset=validation_dataset,
+    #     # num_samples=cfg.hyperparameters.callback_nth, # always select nth sample from the validation dataset
+    # )
 
     # Add the callback to the trainer
-    trainer.add_callback(progress_callback)
+    # trainer.add_callback(progress_callback)
 
     # We will also pre-process the model by upcasting the layer norms in float 32 for more stable training
     for name, module in trainer.model.named_modules():

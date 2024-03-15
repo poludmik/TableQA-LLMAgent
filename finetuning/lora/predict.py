@@ -5,8 +5,8 @@ import torch
 
 seed = 1337
 
-# model_name = "codellama/CodeLlama-7b-Python-hf"
-model_name = "facebook/opt-350m"
+model_name = "codellama/CodeLlama-7b-Python-hf"
+# model_name = "facebook/opt-350m"
 
 quantization_config = BitsAndBytesConfig(load_in_4bit=False)
 
@@ -19,7 +19,7 @@ model.config.use_cache = False
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-peft_model_id = "finetuning/lora/cp/test_opt/final"
+peft_model_id = "finetuning/lora/cp/codellama_python/final"
 peft_model = PeftModel.from_pretrained(model, peft_model_id, offload_folder="finetuning/lora/offload/test_opt")
 # peft_model = model
 
@@ -33,8 +33,8 @@ train_dataset = split_dataset['train']
 validation_dataset = small_dataset
 
 
-# input_prompt = train_dataset[4]["input"]
-input_prompt = """\"I Am Curious: Yellow\" is a risible and pretentious steaming"""
+input_prompt = train_dataset[2]["input"] + "# Code:\n    "
+# input_prompt = """\"I Am Curious: Yellow\" is a risible and pretentious steaming"""
 input_tokens = tokenizer(input_prompt, return_tensors="pt")["input_ids"].to("cuda")
 with torch.cuda.amp.autocast():
     generation_output = peft_model.generate(
