@@ -6,7 +6,7 @@ hyperparameters:
   split_ratio: 0.1 # 10% of the data is used for validation
   output_dir: "finetuning/lora/cp/test_opt/"
   per_device_train_batch_size: 4
-  per_device_eval_batch_size: 1
+  per_device_eval_batch_size: 4
   gradient_accumulation_steps: 4
   eval_accumulation_steps: 1
   optim: "paged_adamw_32bit"
@@ -17,7 +17,7 @@ hyperparameters:
   run_name: "lora_finetuning_python"
   learning_rate: 0.0005
   max_grad_norm: 0.3
-  max_steps: 50
+  max_steps: 20
   warmup_ratio: 0.1
   evaluation_strategy: "steps"
   lr_scheduler_type: "constant"

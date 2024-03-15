@@ -42,10 +42,8 @@ class WandbPredictionProgressCallback(WandbCallback):
         super().__init__()
         self.trainer = trainer
         self.tokenizer = tokenizer
-        self.sample_dataset = val_dataset.select(range(num_samples))
-        # self.sample_dataset.remove_columns("output")
-        self.freq = freq
-
+        self.sample_dataset = val_dataset
+        self.sample_dataset = self.sample_dataset.remove_columns("label")
 
     def on_evaluate(self, args, state, control, **kwargs):
         super().on_evaluate(args, state, control, **kwargs)
@@ -53,7 +51,8 @@ class WandbPredictionProgressCallback(WandbCallback):
         # every `freq` epochs
         print(f"\nEpoch callback:", state.epoch)
 
-        # generate predictions
+        print(self.sample_dataset)
+
         predictions = self.trainer.predict(self.sample_dataset)
         # decode predictions and labels
         predictions = decode_predictions(self.tokenizer, predictions)
@@ -87,7 +86,7 @@ def formatting_func(prompt):
     return prompt["text"]
     # output = []
     # for d, s in zip(prompt["input"], prompt["output"]):
-    #     op = f"{d}{s}{eos_token}"
+    #     op = f"{d}# Code:\n    {s}{eos_token}"
     #     output.append(op)
     # return output
 

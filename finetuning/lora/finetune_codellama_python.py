@@ -56,6 +56,7 @@ def main(config_path: str = "config.yaml"):
     train_dataset = split_dataset['train']
     # validation_dataset = split_dataset['test']
     validation_dataset = small_dataset
+    print(validation_dataset)
 
     print("Train dataset size:", len(train_dataset))
     print("Validation dataset size:", len(validation_dataset))
@@ -119,14 +120,14 @@ def main(config_path: str = "config.yaml"):
         save_steps=cfg.hyperparameters.save_steps,
         learning_rate=cfg.hyperparameters.learning_rate,
         logging_steps=cfg.hyperparameters.logging_steps, # how often to log to W&B
-        max_grad_norm=cfg.hyperparameters.max_grad_norm,
+        # max_grad_norm=cfg.hyperparameters.max_grad_norm,
         max_steps=cfg.hyperparameters.max_steps,
         # warmup_ratio=cfg.hyperparameters.warmup_ratio,
-        group_by_length=cfg.hyperparameters.group_by_length,
+        # group_by_length=cfg.hyperparameters.group_by_length,
         lr_scheduler_type=cfg.hyperparameters.lr_scheduler_type,
         ddp_find_unused_parameters=cfg.hyperparameters.ddp_find_unused_parameters,
-        eval_accumulation_steps=cfg.hyperparameters.eval_accumulation_steps,
-        per_device_eval_batch_size=cfg.hyperparameters.per_device_eval_batch_size,
+        # eval_accumulation_steps=cfg.hyperparameters.eval_accumulation_steps,
+        # per_device_eval_batch_size=cfg.hyperparameters.per_device_eval_batch_size,
         report_to="wandb",  # enable logging to W&B
         run_name=cfg.hyperparameters.run_name,  # name of the W&B run (optional)
     )
@@ -152,11 +153,11 @@ def main(config_path: str = "config.yaml"):
         trainer=trainer,
         tokenizer=tokenizer,
         val_dataset=validation_dataset,
-        num_samples=cfg.hyperparameters.callback_nth, # always select nth sample from the validation dataset
+        # num_samples=cfg.hyperparameters.callback_nth, # always select nth sample from the validation dataset
     )
 
     # Add the callback to the trainer
-    # trainer.add_callback(progress_callback)
+    trainer.add_callback(progress_callback)
 
     # We will also pre-process the model by upcasting the layer norms in float 32 for more stable training
     for name, module in trainer.model.named_modules():

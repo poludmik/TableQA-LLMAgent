@@ -34,7 +34,7 @@ validation_dataset = small_dataset
 
 
 # input_prompt = train_dataset[4]["input"]
-input_prompt = "Why"
+input_prompt = """\"I Am Curious: Yellow\" is a risible and pretentious steaming"""
 input_tokens = tokenizer(input_prompt, return_tensors="pt")["input_ids"].to("cuda")
 with torch.cuda.amp.autocast():
     generation_output = peft_model.generate(
