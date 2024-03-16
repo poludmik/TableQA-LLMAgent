@@ -27,6 +27,8 @@ class CodeLlamaInstructCoder(CoderLLM):
 
     @staticmethod
     def get_last_checkpoint(checkpoint_dir):
+        if isdir(join(checkpoint_dir, "final")):
+            return join(checkpoint_dir, "final"), True
         if isdir(checkpoint_dir):
             is_completed = exists(join(checkpoint_dir, 'completed'))
             if is_completed:
@@ -38,14 +40,17 @@ class CodeLlamaInstructCoder(CoderLLM):
                     max_step = max(max_step, int(filename.replace('checkpoint-', '')))
             if max_step == 0: return None, is_completed  # training started, but no checkpoint
             checkpoint_dir = join(checkpoint_dir, f'checkpoint-{max_step}')
-            print(f"Found a previous checkpoint at: {checkpoint_dir}")
+            print(f"        Found a previous checkpoint at: {checkpoint_dir}")
             return checkpoint_dir, is_completed  # checkpoint found!
         print("isdir is false")
         return None, False  # first training
 
     def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = "",
-              bit: int = None) -> str:
+              bit: int = None) -> tuple[str, PeftModel]:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        max_new_tokens = 300
+        temperature = 1e-9
 
         if bit:
             print(f"    Model '{model_name}' is quantized with {CYAN}{bit} bits.{RESET}")
@@ -63,10 +68,11 @@ class CodeLlamaInstructCoder(CoderLLM):
                 ),
                 # low_cpu_mem_usage=True
             )
-            if adapter_path != "":
-                adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
-                already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path)
-                already_loaded_model.eval()
+        if adapter_path != "":
+            adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
+            print(f"    Loading {CYAN}adapter{RESET} from '{adapter_path}'")
+            already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path)
+            already_loaded_model.eval()
 
         already_loaded_model.eval()
         if bool(re.search(r"CodeLlama-\d+b-Instruct-hf", model_name)):
@@ -75,14 +81,32 @@ class CodeLlamaInstructCoder(CoderLLM):
         elif bool(re.search(r"CodeLlama-\d+b-Python-hf", model_name)):
             print(f"Formatting prompt for {CYAN}Python{RESET} model.")
             prompt = "<s>" + input_text
+            if adapter_path:
+                prompt += "# Code:\n    "
+
+            input_tokens = tokenizer(prompt, return_tensors="pt")["input_ids"].to("cuda")
+            with torch.cuda.amp.autocast():
+                generation_output = already_loaded_model.generate(
+                    input_ids=input_tokens,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=True,
+                    top_k=10,
+                    top_p=0.9,
+                    temperature=1e-9,
+                    # repetition_penalty=1.1,
+                    # num_return_sequences=1,
+                    eos_token_id=tokenizer.eos_token_id,
+                )
+
+            op = tokenizer.decode(generation_output[0], skip_special_tokens=True)
+            print(f"Text:****{op}****")
+            return op, already_loaded_model
+
         elif bool(re.search(r"CodeLlama-\d+b-hf", model_name)):
             print(f"Formatting prompt for {CYAN}Base{RESET} model.")
             prompt = "<s>" + input_text
         else:
             raise ValueError(f"Model name '{model_name}' is not recognized [coder_llms.py].")
-
-        max_new_tokens = 300
-        temperature = 1e-9
 
         def generate(m, user_question, max_new_tokens_local=max_new_tokens, top_p=1, temp=temperature):
             inputs = tokenizer(user_question, return_tensors="pt").to('cuda')

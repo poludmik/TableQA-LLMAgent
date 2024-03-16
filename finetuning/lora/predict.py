@@ -20,7 +20,7 @@ model.config.use_cache = False
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 peft_model_id = "finetuning/lora/cp/codellama_python/final"
-peft_model = PeftModel.from_pretrained(model, peft_model_id, offload_folder="finetuning/lora/offload/test_opt")
+peft_model = PeftModel.from_pretrained(model, peft_model_id, offload_folder="finetuning/lora/offload/codellama_python")
 # peft_model = model
 
 repo = "poludmik/code_completion_for_data_analysis"
@@ -32,20 +32,19 @@ small_dataset = split_dataset['test'].select(range(20))
 train_dataset = split_dataset['train']
 validation_dataset = small_dataset
 
-
 input_prompt = train_dataset[2]["input"] + "# Code:\n    "
 # input_prompt = """\"I Am Curious: Yellow\" is a risible and pretentious steaming"""
 input_tokens = tokenizer(input_prompt, return_tensors="pt")["input_ids"].to("cuda")
 with torch.cuda.amp.autocast():
     generation_output = peft_model.generate(
         input_ids=input_tokens,
-        max_new_tokens=100,
+        max_new_tokens=300,
         do_sample=True,
         top_k=10,
         top_p=0.9,
-        temperature=0.3,
-        repetition_penalty=1.15,
-        num_return_sequences=1,
+        temperature=1e-9,
+        # repetition_penalty=1.1, # needs to be > 1?
+        # num_return_sequences=1, # no effect
         eos_token_id=tokenizer.eos_token_id,
       )
 

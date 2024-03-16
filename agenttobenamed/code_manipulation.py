@@ -28,8 +28,10 @@ class Code:
         # Use re.sub to replace all occurrences of the <|im_sep|> with the ```.
         response = re.sub(re.escape("<|im_sep|>"), "```", response)
 
+        # cuts off the response after the first return statement or plt.show() or plt.savefig()
+
         if "Python-hf" in model_name:
-            pattern = r"(return\s+.*$|^\s*(plt\.show\(\s*\)|plt\.savefig\(\s*.+\s*\))\s*$)"
+            pattern = r"(^\s{4,}return\s+.*$|^\s*(plt\.show\(\s*\)|plt\.savefig\(\s*.+\s*\))\s*$)"
             match = re.search(pattern, response, flags=re.MULTILINE)
             print("match:", match)
 
@@ -115,11 +117,12 @@ class Code:
 
     @staticmethod
     def execute_generated_code(code_str: str, df: pd.DataFrame, tagged_query_type):
+        df_copy = copy.deepcopy(df)
         try:
             print(f"{BLUE}EXECUTING THE CODE{RESET}:")
             for i in [1, 2]:
                 with redirect_stdout(io.StringIO()) as output:
-                    exec(code_str, {'df': df})
+                    exec(code_str, {'df': df_copy})
                 results = copy.deepcopy(output.getvalue())
                 if results != "" or tagged_query_type == "plot":
                     break
