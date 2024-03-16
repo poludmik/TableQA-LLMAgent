@@ -68,21 +68,23 @@ class CodeLlamaInstructCoder(CoderLLM):
                 ),
                 # low_cpu_mem_usage=True
             )
-        if adapter_path != "":
-            adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
-            print(f"    Loading {CYAN}adapter{RESET} from '{adapter_path}'")
-            already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path)
-            already_loaded_model.eval()
-
+            if adapter_path != "":
+                adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
+                print(f"    Loading {CYAN}adapter{RESET} from '{adapter_path}'")
+                already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path, offload_folder="finetuning/lora/offload/codellama_python")
+        already_loaded_model.config.use_cache = False
         already_loaded_model.eval()
+
         if bool(re.search(r"CodeLlama-\d+b-Instruct-hf", model_name)):
             print(f"Formatting prompt for {CYAN}Instruct{RESET} model.")
             prompt = f"<s>[INST] {input_text} [/INST]"
         elif bool(re.search(r"CodeLlama-\d+b-Python-hf", model_name)):
             print(f"Formatting prompt for {CYAN}Python{RESET} model.")
             prompt = "<s>" + input_text
-            if adapter_path:
+            if adapter_path and "qlora" not in adapter_path:
                 prompt += "# Code:\n    "
+
+            # print(f"Input:____{prompt}____")
 
             input_tokens = tokenizer(prompt, return_tensors="pt")["input_ids"].to("cuda")
             with torch.cuda.amp.autocast():
@@ -93,13 +95,13 @@ class CodeLlamaInstructCoder(CoderLLM):
                     top_k=10,
                     top_p=0.9,
                     temperature=1e-9,
-                    # repetition_penalty=1.1,
-                    # num_return_sequences=1,
+                    # repetition_penalty=1.1, # needs to be > 1?
+                    # num_return_sequences=1, # no effect
                     eos_token_id=tokenizer.eos_token_id,
                 )
 
             op = tokenizer.decode(generation_output[0], skip_special_tokens=True)
-            print(f"Text:****{op}****")
+            print(f"Text:>>>>{op}<<<<")
             return op, already_loaded_model
 
         elif bool(re.search(r"CodeLlama-\d+b-hf", model_name)):

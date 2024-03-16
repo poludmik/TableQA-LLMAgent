@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 import random
+import torch
 
 from .llms import LLM
 from .code_manipulation import Code
@@ -70,7 +71,14 @@ class AgentTBN:
         # print('damn!')
 
     def delete_local_llm(self):
-        self.llm_calls.local_coder_model = None
+        self.llm_calls = None
+        self.llm_calls = LLM(use_assistants_api=self.use_assistants_api,
+                             model=self.gpt_model,
+                             head_number=self.head_number,
+                             prompt_strategy=self.prompt_strategy,
+                             add_column_description=self.add_column_description
+                             )
+        print(f"{RED}Local LLM object has been deleted and reinitialized.{RESET}")
 
     @property
     def df(self):  # Lazy loading, when df is first accessed.

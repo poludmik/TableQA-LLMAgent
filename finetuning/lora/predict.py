@@ -2,6 +2,7 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from datasets import load_dataset
 import torch
+import os
 
 seed = 1337
 
@@ -19,7 +20,8 @@ model.config.use_cache = False
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-peft_model_id = "finetuning/lora/cp/codellama_python/final"
+# peft_model_id = "finetuning/lora/cp/codellama_python/final"
+peft_model_id = "/home/micha/homeworks/NLP/fine-tuning/qlora_for_codegen/completion_finetuning_data/output/checkpoint-250"
 peft_model = PeftModel.from_pretrained(model, peft_model_id, offload_folder="finetuning/lora/offload/codellama_python")
 # peft_model = model
 
