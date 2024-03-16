@@ -714,9 +714,9 @@ def solve(df: pd.DataFrame):
         df: pandas DataFrame
 
     Returns:
-        result: variable that answers the task '{input}' (typed e.g. float, DataFrame, list, string, dict, etc.).
-    
-'''
+        Variable containing the answer to the task '{input}' (typed e.g. float, DataFrame, list, string, dict, etc.).
+    """
+    '''
 
     generate_code_for_plot_show = '''```python
 import pandas as pd
@@ -737,8 +737,7 @@ def solve(df: pd.DataFrame):
     Returns:
         None, plt.show() is used to display the plot.
     """
-    
-'''
+    '''
 
     generate_code_for_plot_save = '''```python
 import pandas as pd
@@ -761,8 +760,7 @@ def solve(df: pd.DataFrame):
     Returns:
         None, plt.savefig('{save_plot_name}')
     """
-    
-'''
+    '''
 
     def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")

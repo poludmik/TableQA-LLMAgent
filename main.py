@@ -20,8 +20,8 @@ agent = AgentTBN(csv_path,
                  # coder_model="ise-uiuc/Magicoder-S-CL-7B",
                  add_column_description=True,
                  tagging_strategy="openai", #"openai", "zero_shot_classification"
-                 quantization_bits=4, # for codellamas from HF: 4, 8
-                 # query_type="plot",
+                 quantization_bits=0, # for codellamas from HF: 4, 8
+                 query_type="general",
                  )
 
 # query = "What is the maximum Temperature?"
@@ -29,7 +29,7 @@ agent = AgentTBN(csv_path,
 # query = "minimal value of rate of happy"
 # query = "Find top 10 largest charging cycles and pieplot them. Add values. Use red color for the biggest one. Add shadow. Title it 'Ch. Cycles'."
 # query = "Find the correlation between gdp and happiness index."
-query = "Plot happiness_index values"
+# query = "Plot happiness_index values"
 # query = "Create a pie plot of the top 5 minimal values in the happiness index column in shades of blue."
 # query = "I want to know the average gdp of countries that have happiness index greater than 5.5. I also need these countries."
 # query = "Can you do statistics about happiness index and gdp relationship? like their max, min and mean"
