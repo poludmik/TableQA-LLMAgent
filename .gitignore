@@ -12,3 +12,8 @@ evaluation/conf/config_collect_skip_reasoning.yaml
 /dataset/Text2Analysis/
 testing/
 testing_copy/
+venv/
+wandb/
+dataset/completion_finetuning_data/merge_250_and_t2a.py
+dataset/completion_finetuning_data/completion_inputs_outputs.jsonl
+finetuning/lora/cp/*

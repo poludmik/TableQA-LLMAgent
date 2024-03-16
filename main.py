@@ -54,3 +54,5 @@ print("Returned result:", result)
 # print("Details:", details_dict["final_generated_code"])
 
 print(f"Elapsed time: {time.time() - start_time} seconds")
+
+# agent.load_new_df("dataset/dataset_tables/random_csvs/EV_Battery_Data.csv")

@@ -70,15 +70,31 @@ class AgentTBN:
         self.llm_calls.local_coder_model = None
 
     @property
-    def df(self): # Lazy loading, when df is first accessed.
+    def df(self):  # Lazy loading, when df is first accessed.
         if self._df is None:
-            if self._table_file_path.endswith('.csv'):
-                self._df = pd.read_csv(self._table_file_path)
-            elif self._table_file_path.endswith('.xlsx'):
-                self._df = pd.read_excel(self._table_file_path)
-            else:
-                raise Exception("Only csvs and xlsx are currently supported.")
+            print(f"DataFrame from {GREEN}{self.filename}{RESET} is being loaded...")
+            self._load_df_from_file(self._table_file_path)
         return self._df
+
+    def _load_df_from_file(self, file_path):
+        """
+        Internal method to load a DataFrame from a given file path.
+        Supports CSV and Excel files.
+        """
+        if file_path.endswith('.csv'):
+            self._df = pd.read_csv(file_path)
+        elif file_path.endswith('.xlsx'):
+            self._df = pd.read_excel(file_path)
+        else:
+            raise Exception("Only CSVs and XLSX files are currently supported.")
+
+    def load_new_df(self, new_file_path: str):
+        """
+        Loads a new DataFrame from a given file path and updates the instance accordingly.
+        """
+        self._table_file_path = new_file_path
+        self.filename = Path(new_file_path).name
+        self._df = None # For lazy loader to load later
 
     def skip_reasoning_part(self, plan: str, tagged_query_type: str, prompt_user_for_planner: str):
         self._user_set_plan = plan
