@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 import random
+import torch
 
 from .llms import LLM
 from .code_manipulation import Code
@@ -22,6 +23,7 @@ class AgentTBN:
                  add_column_description=False,
                  use_assistants_api=False,
                  query_type=None, # fixes query type for all upcoming queries
+                 collect_inputs_for_completion=False,
                  ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
@@ -49,6 +51,8 @@ class AgentTBN:
         if not self.coder_model.startswith("gpt"):
             self.provider = "local"
 
+        self.collect_inputs_for_completion = collect_inputs_for_completion
+
         self.use_assistants_api = use_assistants_api
         assert not (self.use_assistants_api and self.prompt_strategy == "coder_only_simple"), "Both use_assistants_api and coder_only_simple cannot be True at the same time."
 
@@ -67,18 +71,41 @@ class AgentTBN:
         # print('damn!')
 
     def delete_local_llm(self):
-        self.llm_calls.local_coder_model = None
+        self.llm_calls = None
+        self.llm_calls = LLM(use_assistants_api=self.use_assistants_api,
+                             model=self.gpt_model,
+                             head_number=self.head_number,
+                             prompt_strategy=self.prompt_strategy,
+                             add_column_description=self.add_column_description
+                             )
+        print(f"{RED}Local LLM object has been deleted and reinitialized.{RESET}")
 
     @property
-    def df(self): # Lazy loading, when df is first accessed.
+    def df(self):  # Lazy loading, when df is first accessed.
         if self._df is None:
-            if self._table_file_path.endswith('.csv'):
-                self._df = pd.read_csv(self._table_file_path)
-            elif self._table_file_path.endswith('.xlsx'):
-                self._df = pd.read_excel(self._table_file_path)
-            else:
-                raise Exception("Only csvs and xlsx are currently supported.")
+            print(f"DataFrame from {GREEN}{self.filename}{RESET} is being loaded...")
+            self._load_df_from_file(self._table_file_path)
         return self._df
+
+    def _load_df_from_file(self, file_path):
+        """
+        Internal method to load a DataFrame from a given file path.
+        Supports CSV and Excel files.
+        """
+        if file_path.endswith('.csv'):
+            self._df = pd.read_csv(file_path)
+        elif file_path.endswith('.xlsx'):
+            self._df = pd.read_excel(file_path)
+        else:
+            raise Exception("Only CSVs and XLSX files are currently supported.")
+
+    def load_new_df(self, new_file_path: str):
+        """
+        Loads a new DataFrame from a given file path and updates the instance accordingly.
+        """
+        self._table_file_path = new_file_path
+        self.filename = Path(new_file_path).name
+        self._df = None # For lazy loader to load later
 
     def skip_reasoning_part(self, plan: str, tagged_query_type: str, prompt_user_for_planner: str):
         self._user_set_plan = plan
@@ -138,7 +165,11 @@ class AgentTBN:
                                                                quantization_bits=self.quantization_bits,
                                                                adapter_path=self.adapter_path,
                                                                save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
+                                                               collect_input_prompts=self.collect_inputs_for_completion
                                                                )
+
+        if self.collect_inputs_for_completion:
+            return "collecting input prompts", coder_prompt
 
         code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot, model_name=self.coder_model)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
