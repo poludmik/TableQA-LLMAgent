@@ -30,10 +30,10 @@ class CodeLlamaInstructCoder(CoderLLM):
         if isdir(join(checkpoint_dir, "final")):
             return join(checkpoint_dir, "final"), True
         if isdir(checkpoint_dir):
-            is_completed = exists(join(checkpoint_dir, 'completed'))
+            is_completed = exists(checkpoint_dir) and "checkpoint" in checkpoint_dir
             if is_completed:
                 print("what")
-                return None, True  # already finished
+                return checkpoint_dir, True  # already finished
             max_step = 0
             for filename in os.listdir(checkpoint_dir):
                 if isdir(join(checkpoint_dir, filename)) and filename.startswith('checkpoint'):
@@ -102,6 +102,18 @@ class CodeLlamaInstructCoder(CoderLLM):
 
             op = tokenizer.decode(generation_output[0], skip_special_tokens=True)
             print(f"Text:>>>>{op}<<<<")
+
+            # prompt = prompt[3:]
+            # lines_beginning = prompt.split('\n')
+            # lines_full = op.split('\n')
+            #
+            # for i, line in enumerate(lines_full):
+            #     if i > 3 and i >= len(lines_beginning) or lines_full[i] != lines_beginning[i]:
+            #         lines_full.pop(i)
+            #         break
+            #
+            # op = '\n'.join(lines_full)
+
             return op, already_loaded_model
 
         elif bool(re.search(r"CodeLlama-\d+b-hf", model_name)):
