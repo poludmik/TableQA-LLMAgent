@@ -6,7 +6,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 from peft import PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
-from vllm import LLM, SamplingParams
+# from vllm import LLM, SamplingParams # uncomment for WizardCoder, couldn't install on cluster
 from .logger import *
 
 
@@ -45,7 +45,7 @@ class CodeLlamaInstructCoder(CoderLLM):
         print("isdir is false")
         return None, False  # first training
 
-    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = "",
+    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = None,
               bit: int = None) -> tuple[str, PeftModel]:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -65,10 +65,10 @@ class CodeLlamaInstructCoder(CoderLLM):
                     # bnb_4bit_compute_dtype=torch.bfloat16,
                     # bnb_4bit_use_double_quant=True,
                     # bnb_4bit_quant_type='nf4',
-                ),
+                ) if bit else None,
                 # low_cpu_mem_usage=True
             )
-            if adapter_path != "":
+            if adapter_path:
                 adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
                 print(f"    Loading {CYAN}adapter{RESET} from '{adapter_path}'")
                 already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path, offload_folder="finetuning/lora/offload/codellama_python")
@@ -81,8 +81,6 @@ class CodeLlamaInstructCoder(CoderLLM):
         elif bool(re.search(r"CodeLlama-\d+b-Python-hf", model_name)):
             print(f"Formatting prompt for {CYAN}Python{RESET} model.")
             prompt = "<s>" + input_text
-            if adapter_path and "qlora" not in adapter_path:
-                prompt += "# Code:\n    "
 
             # print(f"Input:____{prompt}____")
 
@@ -97,10 +95,10 @@ class CodeLlamaInstructCoder(CoderLLM):
                     temperature=1e-9,
                     # repetition_penalty=1.1, # needs to be > 1?
                     # num_return_sequences=1, # no effect
-                    eos_token_id=tokenizer.eos_token_id,
+                    # eos_token_id=tokenizer.eos_token_id,
                 )
 
-            op = tokenizer.decode(generation_output[0], skip_special_tokens=True)
+            op = tokenizer.decode(generation_output[0], skip_special_tokens=True) # if True, doesn't print <s> and </s>
             print(f"Text:>>>>{op}<<<<")
 
             # prompt = prompt[3:]

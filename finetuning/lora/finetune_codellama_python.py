@@ -1,4 +1,7 @@
-import random
+"""
+This script doesn't work properly, use another_codellama_finetune.py instead. 
+This script is kept for reference purposes only.
+"""
 
 import torch
 import transformers
@@ -14,7 +17,6 @@ from peft import (
 )
 from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 import os
-from agenttobenamed.logger import *
 import wandb
 from utils import *
 # import hydra
@@ -35,13 +37,13 @@ def main(config_path: str = "config.yaml"):
     model_name = "codellama/CodeLlama-7b-Python-hf"
     # model_name = "facebook/opt-350m"
 
-    quantization_config = BitsAndBytesConfig(load_in_4bit=False)
+    quantization_config = BitsAndBytesConfig(load_in_8bit=False)
 
     model = AutoModelForCausalLM.from_pretrained(model_name,
-                                                 quantization_config=quantization_config,
+                                                #  quantization_config=quantization_config,
                                                  device_map="auto"
                                                  )
-    model.config.use_cache = False
+
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -110,7 +112,7 @@ def main(config_path: str = "config.yaml"):
     tokenizer.pad_token = tokenizer.eos_token
     # model.resize_token_embeddings(len(tokenizer))
 
-    model = prepare_model_for_kbit_training(model)
+    # model = prepare_model_for_kbit_training(model)
     model = get_peft_model(model, lora_config)
 
     trainable, total = model.get_nb_trainable_parameters()
@@ -125,14 +127,14 @@ def main(config_path: str = "config.yaml"):
         save_steps=cfg.hyperparameters.save_steps,
         learning_rate=cfg.hyperparameters.learning_rate,
         logging_steps=cfg.hyperparameters.logging_steps, # how often to log to W&B
-        # max_grad_norm=cfg.hyperparameters.max_grad_norm,
+        max_grad_norm=cfg.hyperparameters.max_grad_norm,
         max_steps=cfg.hyperparameters.max_steps,
-        # warmup_ratio=cfg.hyperparameters.warmup_ratio,
-        # group_by_length=cfg.hyperparameters.group_by_length,
+        warmup_ratio=cfg.hyperparameters.warmup_ratio,
+        group_by_length=cfg.hyperparameters.group_by_length,
         lr_scheduler_type=cfg.hyperparameters.lr_scheduler_type,
         ddp_find_unused_parameters=cfg.hyperparameters.ddp_find_unused_parameters,
-        # eval_accumulation_steps=cfg.hyperparameters.eval_accumulation_steps,
-        # per_device_eval_batch_size=cfg.hyperparameters.per_device_eval_batch_size,
+        eval_accumulation_steps=cfg.hyperparameters.eval_accumulation_steps,
+        per_device_eval_batch_size=cfg.hyperparameters.per_device_eval_batch_size,
         report_to="wandb",  # enable logging to W&B
         # run_name=cfg.hyperparameters.run_name + "_id" + str(random.randint(0, 1000000)),  # name of the W&B run (optional)
         run_name=cfg.hyperparameters.run_name,

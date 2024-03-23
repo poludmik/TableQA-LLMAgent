@@ -248,7 +248,7 @@ class LLM:
             print("instruction_prompt:", instruction_prompt)
             return GPTCoder().query(llm, instruction_prompt), instruction_prompt
 
-        elif llm == "codellama/CodeLlama-7b-Instruct-hf":  # local llm
+        elif bool(re.search(r"CodeLlama-\d+b-Instruct-hf", llm)):
             answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
                                                                             instruction_prompt,
                                                                             already_loaded_model=self.local_coder_model,
@@ -256,7 +256,7 @@ class LLM:
                                                                             bit=quantization_bits)
             return answer, instruction_prompt
 
-        elif llm == "codellama/CodeLlama-7b-hf":
+        elif bool(re.search(r"CodeLlama-\d+b-hf", llm)):
             if not isinstance(self.prompts.strategy, PromptsCoderOnlyInfillingForFunctionGeneration) and \
                 not isinstance(self.prompts.strategy, PromptsCoderOnlyCompletionForFunctionGeneration):
                 raise Exception("The prompt strategy must be 'coder_only_infilling_functions' for this model.")
@@ -268,7 +268,7 @@ class LLM:
                                                                           bit=quantization_bits)
             return answer, instruction_prompt
 
-        elif llm == "codellama/CodeLlama-7b-Python-hf":
+        elif bool(re.search(r"CodeLlama-\d+b-Python-hf", llm)):
             if not isinstance(self.prompts.strategy, PromptsCoderOnlyCompletionForFunctionGeneration):
                 raise Exception("The prompt strategy must be 'coder_only_completion_functions' for this model.")
             answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
