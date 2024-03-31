@@ -15,8 +15,12 @@ class AgentTBN:
                  max_debug_times: int = 2,
                  gpt_model="gpt-3.5-turbo-1106",
                  coder_model="gpt-3.5-turbo-1106",
-                 quantization_bits=None, # for local coding LLMs
-                 adapter_path="",
+                 coder_quantization_bits=None,
+                 coder_adapter_path="",
+                 debug_model="gpt-3.5-turbo-1106",
+                 debug_quantization_bits=None,
+                 debug_adapter_path="",
+                 debug_strategy="basic",
                  head_number=2,
                  prompt_strategy="simple",
                  tagging_strategy="openai",
@@ -32,10 +36,16 @@ class AgentTBN:
         self._table_file_path = table_file_path
         self._df = None
 
-        self.gpt_model = gpt_model
+        self.gpt_model = gpt_model # used for planning steps if needed
+
         self.coder_model = coder_model
-        self.adapter_path = adapter_path
-        self.quantization_bits = quantization_bits
+        self.coder_adapter_path = coder_adapter_path
+        self.coder_quantization_bits = coder_quantization_bits
+
+        self.debug_model = debug_model
+        self.debug_adapter_path = debug_adapter_path
+        self.debug_quantization_bits = debug_quantization_bits
+        self.debug_strategy = debug_strategy
         self.max_debug_times = max_debug_times
 
         # for skipping the reasoning part
@@ -60,7 +70,8 @@ class AgentTBN:
                              model=self.gpt_model,
                              head_number=self.head_number,
                              prompt_strategy=self.prompt_strategy,
-                             add_column_description=self.add_column_description
+                             add_column_description=self.add_column_description,
+                             debug_strategy=self.debug_strategy,
                              )
 
         assert tagging_strategy in ["openai", "zero_shot_classification"], "Tagging strategy must be either 'openai' or 'zero_shot_classification'."
@@ -158,12 +169,13 @@ class AgentTBN:
         if self._user_set_plan is None and not self.prompt_strategy.startswith("coder_only"): # Not skipping the reasoning part
             plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type)
 
-        generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df, plan,
+        generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df,
+                                                               plan=plan, # could be None
                                                                show_plot=show_plot,
                                                                tagged_query_type=self._tagged_query_type,
                                                                llm=self.coder_model,
-                                                               quantization_bits=self.quantization_bits,
-                                                               adapter_path=self.adapter_path,
+                                                               quantization_bits=self.coder_quantization_bits,
+                                                               adapter_path=self.coder_adapter_path,
                                                                save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
                                                                collect_input_prompts=self.collect_inputs_for_completion
                                                                )
@@ -174,17 +186,15 @@ class AgentTBN:
         code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot, model_name=self.coder_model)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
-        if "import pandas as pd" not in code_to_execute or "import matplotlib.pyplot as plt" not in code_to_execute:
-            code_to_execute = Code.prepend_imports(code_to_execute)
-
-        if self.prompt_strategy.endswith("functions"):
-            code_to_execute = Code.append_result_storage(code_to_execute)
-
-        code_to_execute = Code.format_to_pep8(code_to_execute)
+        if not code_to_execute:
+            print(f"{RED}Empty code after preprocessing!{RESET}")
+            code_to_execute = generated_code
+            res, exception = "ERROR", "The solve(df) function is not found in the generated code or not defined properly, possibly missing return value."
+        else:
+            code_to_execute = Code.preprocess_extracted_code(code_to_execute, self.prompt_strategy)
+            res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=self._tagged_query_type)
 
         print(f"{YELLOW}>>>>>>> Formatted code:{RESET}\n{code_to_execute}")
-
-        res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=self._tagged_query_type)
         debug_prompt = ""
 
         count = 0
@@ -192,10 +202,20 @@ class AgentTBN:
 
         res = "ERROR" if exception == "empty exec()" else res
 
-        while res == "ERROR" and count < self.max_debug_times:
+        while res == "ERROR" and count < self.max_debug_times: # Debugging loop
             errors.append(exception)
-            regenerated_code, debug_prompt = self.llm_calls.fix_generated_code(self.df, code_to_execute, exception, query)
-            code_to_execute = Code.extract_code(regenerated_code, provider=self.provider)
+            # code_to_execute = Code.remove_result_storage_lines(code_to_execute) if self.prompt_strategy.endswith("functions") else code_to_execute
+            code_to_execute, debug_prompt = self.llm_calls.generate_code(query, self.df,
+                                                                          llm=self.debug_model,
+                                                                          quantization_bits=self.debug_quantization_bits,
+                                                                          adapter_path=self.debug_adapter_path,
+                                                                          code_to_debug=code_to_execute,
+                                                                          error_message=exception,
+                                                                          initial_coder_prompt=coder_prompt,
+                                                                          )
+            code_to_execute = Code.extract_code(code_to_execute, provider=self.provider)
+            code_to_execute = Code.preprocess_extracted_code(code_to_execute, self.prompt_strategy)
+            print(f"{YELLOW}>>>>>>> Formatted code:{RESET}\n{code_to_execute}")
             res, exception = Code.execute_generated_code(code_to_execute, self.df, self._tagged_query_type)
             count += 1
         errors = errors + [exception] if res == "ERROR" or not code_to_execute.strip() else []

@@ -41,14 +41,18 @@ class LLM:
                  use_assistants_api=False,
                  head_number=2,
                  prompt_strategy="simple",
-                 add_column_description=False
+                 add_column_description=False,
+                 debug_strategy="basic"
                  ):
         self.model = model
         self.head_number = head_number
         self.local_coder_model = None
         self.add_column_description = add_column_description
-        self.prompts = Prompts(str_strategy=prompt_strategy, head_number=head_number,
-                               add_column_description=self.add_column_description)
+        self.debug_strategy = debug_strategy
+        self.prompts = Prompts(str_strategy=prompt_strategy,
+                               head_number=head_number,
+                               add_column_description=self.add_column_description,
+                               debug_strategy=debug_strategy)
         if use_assistants_api:
             self._call_openai_llm = self._get_response_from_assistant
             self.client = OpenAI()
@@ -215,38 +219,44 @@ class LLM:
     def generate_code(self,
                       user_query,
                       df,
-                      plan,
+                      plan=None,
                       show_plot=False,
                       tagged_query_type="general",
                       llm="gpt-3.5-turbo-1106",
                       adapter_path="",
                       save_plot_name="",  # for the "coder_only" prompt strategies
                       quantization_bits=None,  # quantization for local llm
-                      collect_input_prompts=False
+                      collect_input_prompts=False,
+                      code_to_debug: str = "", # instead of generating code, debug this one
+                      error_message: str = "", # error message to be fixed
+                      initial_coder_prompt: str = "",
                       ):
+        assert code_to_debug and error_message or (not code_to_debug and not error_message), "code_to_debug and error_message must be specified together"
 
-        print(f"{BLUE}[{llm}] GENERATING CODE{RESET}: {YELLOW}{llm}{RESET}")
-
-        if tagged_query_type == "general":
-            print(f"    {CYAN}General{RESET} prompt used.")
-            instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
-        else:  # "plot"
-            if show_plot:
-                # use `plt.show()` in the generated code
-                print(f"    {CYAN}Show plot{RESET} prompt used.")
-                instruction_prompt = self.prompts.generate_code_for_plot_show_prompt(df, user_query, plan)
-            else:
-                # don't include plt.show() in the generated code, save the image to `save_plot_name`
-                print(f"    {CYAN}Save plot{RESET} prompt used.")
-                instruction_prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan,
+        if code_to_debug:
+            print(f"{BLUE}[{llm}] DEBUGGING CODE{RESET}: {YELLOW}{llm}{RESET}")
+            instruction_prompt = self.prompts.fix_code_prompt(df, user_query, code_to_debug, error_message, initial_coder_prompt)
+        else:
+            print(f"{BLUE}[{llm}] GENERATING CODE{RESET}: {YELLOW}{llm}{RESET}")
+            if tagged_query_type == "general":
+                print(f"    {CYAN}General{RESET} prompt used.")
+                instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
+            else:  # "plot"
+                if show_plot:
+                    # use `plt.show()` in the generated code
+                    print(f"    {CYAN}Show plot{RESET} prompt used.")
+                    instruction_prompt = self.prompts.generate_code_for_plot_show_prompt(df, user_query, plan)
+                else:
+                    # don't include plt.show() in the generated code, save the image to `save_plot_name`
+                    print(f"    {CYAN}Save plot{RESET} prompt used.")
+                    instruction_prompt = self.prompts.generate_code_for_plot_save_prompt(df, user_query, plan,
                                                                                      save_plot_name=save_plot_name)
 
         if collect_input_prompts:
             return "", instruction_prompt
 
         if llm.startswith("gpt"):
-            print("instruction_prompt:", instruction_prompt)
-            return GPTCoder().query(llm, instruction_prompt), instruction_prompt
+            answer = GPTCoder().query(llm, instruction_prompt)
 
         elif bool(re.search(r"CodeLlama-\d+b-Instruct-hf", llm)):
             answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
@@ -254,7 +264,6 @@ class LLM:
                                                                             already_loaded_model=self.local_coder_model,
                                                                             adapter_path=adapter_path,
                                                                             bit=quantization_bits)
-            return answer, instruction_prompt
 
         elif bool(re.search(r"CodeLlama-\d+b-hf", llm)):
             if not isinstance(self.prompts.strategy, PromptsCoderOnlyInfillingForFunctionGeneration) and \
@@ -266,7 +275,6 @@ class LLM:
                                                                           already_loaded_model=self.local_coder_model,
                                                                           adapter_path=adapter_path,
                                                                           bit=quantization_bits)
-            return answer, instruction_prompt
 
         elif bool(re.search(r"CodeLlama-\d+b-Python-hf", llm)):
             if not isinstance(self.prompts.strategy, PromptsCoderOnlyCompletionForFunctionGeneration):
@@ -276,17 +284,27 @@ class LLM:
                                                                           already_loaded_model=self.local_coder_model,
                                                                           adapter_path=adapter_path,
                                                                           bit=quantization_bits)
-            return answer, instruction_prompt
 
         elif llm.startswith("WizardLM/WizardCoder-"):  # under 34B
-            return WizardCoder().query(llm, instruction_prompt), instruction_prompt
+            answer =  WizardCoder().query(llm, instruction_prompt)
 
         elif llm == "ise-uiuc/Magicoder-S-CL-7B":  # doesn't really work yet
-            return CodeLlamaInstructCoder().query(llm, instruction_prompt), instruction_prompt
+            answer = CodeLlamaInstructCoder().query(llm, instruction_prompt)
 
-    def fix_generated_code(self, df, code_to_be_fixed, error_message, user_query):
-        prompt = self.prompts.fix_code_prompt(df, user_query, code_to_be_fixed, error_message)
-        return self._call_openai_llm(prompt, Role.DEBUGGER), prompt
+        else:
+            raise Exception(f"{RED}[LLM.generate_code() in llms.py] Model name: {llm} was not recognized.{RESET}")
+
+        if code_to_debug and "gpt" in llm and self.debug_strategy == "completion":
+            pattern = r"""(^```python\s+(?!import|def\s+solve)) | (\n```python\s+(?!import|def\s+solve))"""
+            if re.match(pattern, answer, re.DOTALL | re.VERBOSE):
+                print(f"{BLUE}Answer starts with{RESET}: {YELLOW}{answer[:12]}{RESET} and next word is not `import` and not `def solve`, removing ```python.")
+                answer = answer.replace("```python", "")
+            if "def solve" not in answer:
+                print(f"{BLUE}Answer does not contain{RESET}: {YELLOW}def solve{RESET}, adding `def solve`.")
+                answer = initial_coder_prompt + answer
+            # print("Text:->->->" + answer + "<-<-<-")
+
+        return answer, instruction_prompt
 
     def pure_openai_assistant_answer(self, df_filename, user_query, possible_plotname=None):
         def wait_on_run(run_local, thread_local):

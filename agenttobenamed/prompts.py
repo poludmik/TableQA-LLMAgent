@@ -121,28 +121,6 @@ Example of the output format with backticks:
 ```
 """
 
-    fix_code = """You are a helpful assistant that corrects the Python code that resulted in an error and returns the corrected code.
-
-The code was designed to achieve this user request: '{input}'.
-The DataFrame df that we are working with has already been defined and populated with the necessary data, so there is no need to load or create a new one.
-The result of `print(df.head({head_number}))` is:
-{df_head}
-{column_description}
-The execution of the following code that was provided in the previous step resulted in an error:
-```python
-{code}
-```
-
-The error message is: '{error}'
-
-Return a corrected Python code that fixes the error.
-Always include the import statements at the top of the code, and comments and print statements where necessary.
-Use the same format with backticks. Example of the output format with backticks:
-```python
-
-```
-"""
-
     def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
         return self.generate_steps_no_plot.format(df_head=df.head(head_number), input=user_query,
                                                   column_description=column_description)
@@ -795,15 +773,50 @@ def solve(df: pd.DataFrame):
                                                        save_plot_name=save_plot_name)
 
 
+class DebugPrompts:
+    basic_debug_prompt = """You are a helpful assistant that corrects the Python code that resulted in an error and returns the corrected code.
+
+The code was designed to achieve this user request: '{input}'.
+The DataFrame df that we are working with has already been defined and populated with the necessary data, so there is no need to load or create a new one.
+
+{column_description}
+
+The execution of the following code that was by a low-quality assistant resulted in an error:
+```python
+{code}
+```
+
+The error message was: "{error}".
+
+Return only corrected Python code that fixes the error.
+Use the same format with backticks.
+If part of the code is not defined, or the whole code is a complete nonsense, define or rewrite it.
+"""
+
+    completion_debug_prompt = '''The code was designed to achieve this user request: '{input}'.
+Here is the code that needs to be fixed:
+## Faulty code:
+```python
+{code}
+```
+
+## Error message:
+The error message is: "{error}"
+
+Don't test the code by creating new DataFrames or print statements, only correct the code.
+
+## Corrected solution:
+{initial_coder_prompt}
+'''
+
+
+
 class Prompts:
-    def __init__(self, str_strategy: PromptsSimple |
-                                     PromptsForFunctionGeneration |
-                                     PromptsSimpleCoderOnly |
-                                     PromptsCoderOnlyForFunctionGeneration |
-                                     PromptsCoderOnlyInfillingForFunctionGeneration |
-                                     PromptsCoderOnlyCompletionForFunctionGeneration,
-                 head_number: int,
-                 add_column_description: bool = False
+    def __init__(self,
+                 str_strategy: str, # one of "simple", "coder_only_simple", "functions", "coder_only_functions", "coder_only_infilling_functions", "coder_only_completion_functions"
+                 head_number: int, # number of rows to show in the head of the DataFrame
+                 add_column_description: bool = True, # adds json with column names and sample values to the prompt
+                 debug_strategy: str = "basic", # one of "basic", "completion"
                  ):
 
         self.head_number = head_number
@@ -816,10 +829,18 @@ class Prompts:
                   "coder_only_infilling_functions": PromptsCoderOnlyInfillingForFunctionGeneration(),
                   "coder_only_completion_functions": PromptsCoderOnlyCompletionForFunctionGeneration()}
 
+        debug_strats = {"basic": DebugPrompts.basic_debug_prompt, # str
+                        "completion": DebugPrompts.completion_debug_prompt}
+
         if str_strategy in strats:
             self.strategy = strats[str_strategy]
         else:
-            raise Exception(f"{RED}Unknown prompt strategy!{RESET}")
+            raise Exception(f"{RED}Unknown {CYAN}coder{RED} prompt strategy! See __init__ of Prompts() in prompts.py{RESET}")
+
+        if debug_strategy in debug_strats:
+            self.debug_strategy = debug_strats[debug_strategy]
+        else:
+            raise Exception(f"{RED}Unknown {CYAN}debug{RED} prompt strategy! See __init__ of Prompts() in prompts.py{RESET}")
 
     def column_description(self, df):  # Changes if we change the 'df' from outside. Creates description dynamically.
         if self.add_column_description:
@@ -853,6 +874,7 @@ class Prompts:
                                                                        self.column_description(df),
                                                                        save_plot_name=save_plot_name)
 
-    def fix_code_prompt(self, df, user_query, code_to_be_fixed, error_message):
-        return PromptsSimple().format_fix_code_prompt(self.head_number, df, user_query, code_to_be_fixed, error_message,
-                                                      self.column_description(df))
+    def fix_code_prompt(self, df, user_query, code_to_be_fixed, error_message, initial_coder_prompt):
+        return self.debug_strategy.format(code=code_to_be_fixed, df_head=df.head(self.head_number), error=error_message,
+                                          input=user_query, head_number=self.head_number, column_description=self.column_description(df),
+                                          initial_coder_prompt=initial_coder_prompt)
