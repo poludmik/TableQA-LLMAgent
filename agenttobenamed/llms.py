@@ -42,16 +42,19 @@ class LLM:
                  head_number=2,
                  prompt_strategy="simple",
                  add_column_description=False,
+                 n_column_samples=0,
                  debug_strategy="basic"
                  ):
         self.model = model
         self.head_number = head_number
         self.local_coder_model = None
         self.add_column_description = add_column_description
+        self.n_column_samples = n_column_samples
         self.debug_strategy = debug_strategy
         self.prompts = Prompts(str_strategy=prompt_strategy,
                                head_number=head_number,
                                add_column_description=self.add_column_description,
+                               n_column_samples=self.n_column_samples,
                                debug_strategy=debug_strategy)
         if use_assistants_api:
             self._call_openai_llm = self._get_response_from_assistant

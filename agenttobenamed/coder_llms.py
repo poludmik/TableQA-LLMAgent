@@ -16,11 +16,11 @@ class CoderLLM:
 
 class GPTCoder(CoderLLM):
     def query(self, model_name: str, input_text: str) -> str:
-        print(f"***{input_text}***")
+        # print(f"***{input_text}***")
         chat_model = ChatOpenAI(model=model_name, temperature=0)
         messages = [HumanMessage(content=input_text)]
         res = chat_model.invoke(messages).content
-        print(f"Text:>>>>{res}<<<<")
+        # print(f"Text:>>>>{res}<<<<")
         return res
 
 

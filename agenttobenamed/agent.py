@@ -25,6 +25,7 @@ class AgentTBN:
                  prompt_strategy="simple",
                  tagging_strategy="openai",
                  add_column_description=False,
+                 n_column_samples=0,
                  use_assistants_api=False,
                  query_type=None, # fixes query type for all upcoming queries
                  collect_inputs_for_completion=False,
@@ -33,6 +34,10 @@ class AgentTBN:
         self.head_number = head_number
         self.prompt_strategy = prompt_strategy
         self.add_column_description = add_column_description
+        self.n_column_samples = n_column_samples
+        # assert not add_column_description or n_column_samples > 0, "If add_column_description is True, n_column_samples must be greater than 0." (allowing 0 sample values)
+        assert n_column_samples <= 0 or add_column_description, "If n_column_samples is greater than 0, add_column_description must be True."
+
         self._table_file_path = table_file_path
         self._df = None
 
@@ -71,6 +76,7 @@ class AgentTBN:
                              head_number=self.head_number,
                              prompt_strategy=self.prompt_strategy,
                              add_column_description=self.add_column_description,
+                             n_column_samples=self.n_column_samples,
                              debug_strategy=self.debug_strategy,
                              )
 
@@ -87,7 +93,8 @@ class AgentTBN:
                              model=self.gpt_model,
                              head_number=self.head_number,
                              prompt_strategy=self.prompt_strategy,
-                             add_column_description=self.add_column_description
+                             add_column_description=self.add_column_description,
+                             n_column_samples=self.n_column_samples,
                              )
         print(f"{RED}Local LLM object has been deleted and reinitialized.{RESET}")
 
@@ -192,9 +199,9 @@ class AgentTBN:
             res, exception = "ERROR", "The solve(df) function is not found in the generated code or not defined properly, possibly missing return value."
         else:
             code_to_execute = Code.preprocess_extracted_code(code_to_execute, self.prompt_strategy)
+            print(f"{YELLOW}>>>>>>> Formatted code:{RESET}\n{code_to_execute}")
             res, exception = Code.execute_generated_code(code_to_execute, self.df, tagged_query_type=self._tagged_query_type)
 
-        print(f"{YELLOW}>>>>>>> Formatted code:{RESET}\n{code_to_execute}")
         debug_prompt = ""
 
         count = 0
