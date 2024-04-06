@@ -125,8 +125,7 @@ class Code:
                 results = copy.deepcopy(output.getvalue())
                 if results != "" or tagged_query_type == "plot":
                     break
-                print(
-                    f"{RED}{i}. Empty exec() output for the 'general' query type!{RESET}")  # caused by no ```python  ``` in gpt's response?
+                print(f"{RED}{i}. Empty exec() output for the 'general' query type!{RESET}")  # caused by no ```python  ``` in llm response or similar
                 if i == 2:
                     return "", "empty exec()"
             output.truncate(0)
@@ -142,14 +141,28 @@ class Code:
             return "ERROR", exec_traceback
 
     @staticmethod
-    def prepend_imports(code_str: str) -> str:
+    def _prepend_imports(code_str: str) -> str:
         return f"import pandas as pd\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n{code_str}"
 
     @staticmethod
-    def append_result_storage(code_str: str) -> str:
+    def _append_result_storage(code_str: str) -> str:
         return code_str + "\n\n" + "result = solve(df)\nprint(result)"
 
     @staticmethod
-    def format_to_pep8(code_str: str) -> str:
+    def remove_result_storage_lines(code_str: str) -> str:
+        return re.sub(r"result = solve\(df\)\nprint\(result\)", "", code_str)
+
+    @staticmethod
+    def _format_to_pep8(code_str: str) -> str:
         # Removes redundant whitespaces and formats the code to PEP8
         return autopep8.fix_code(code_str)
+
+    @staticmethod
+    def preprocess_extracted_code(extracted_code: str, prompt_strategy: str) -> str:
+        if "import pandas as pd" not in extracted_code or "import matplotlib.pyplot as plt" not in extracted_code:
+            extracted_code = Code._prepend_imports(extracted_code)
+
+        if prompt_strategy.endswith("functions"):
+            extracted_code = Code._append_result_storage(extracted_code)
+
+        return Code._format_to_pep8(extracted_code)

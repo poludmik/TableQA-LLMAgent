@@ -5,7 +5,7 @@ class StringOperations:
     @staticmethod
     def prepend_column_desc_and_df_head(column_description, df_head):
         tab = " " * 4
-        return tab + column_description.replace('\n', '\n' + tab), tab + df_head.to_string().replace('\n', '\n' + tab)
+        return tab + column_description.replace('\n', '\n' + tab), tab + df_head.replace('\n', '\n' + tab)
 
 
 class PromptsSimple:
@@ -16,7 +16,7 @@ Formulate your response as an algorithm, breaking the solution into steps, inclu
 Make sure to state saving the plot to '{plotname}' in the last step. Do not include showing the plot to the user interactively; only save it to the '{plotname}'.
 
 This algorithm will later be used to write Python code and applied to the existing pandas DataFrame `df`. 
-The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
 Present your algorithm in up to six simple, clear English steps. 
@@ -37,7 +37,7 @@ The user asked the following question: '{input}'.
 Formulate your response as an algorithm, breaking the solution into steps, including any values necessary to answer the question, such as names of DataFrame columns. Make sure to state showing the plot in the last step.
 
 This algorithm will later be used to write Python code and applied to the existing pandas DataFrame `df`. 
-The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
 Present your algorithm in up to six simple, clear English steps. 
@@ -58,7 +58,7 @@ The user asked the following question: '{input}'.
 Formulate your response as an algorithm, breaking the solution into steps, including any values necessary to answer the question, such as names of DataFrame columns.
 
 This algorithm will later be used to write Python code and applied to the existing pandas DataFrame 'df'. 
-The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
+The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
 Present your algorithm with at most six simple, clear English steps. 
@@ -79,7 +79,6 @@ You also have a list of subtasks to be accomplished using Python.
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return only the Python code that accomplishes the following tasks:
@@ -102,7 +101,6 @@ You also have a list of subtasks to be accomplished using Python.
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return only the Python code that accomplishes the following tasks:
@@ -121,58 +119,30 @@ Example of the output format with backticks:
 ```
 """
 
-    fix_code = """You are a helpful assistant that corrects the Python code that resulted in an error and returns the corrected code.
-
-The code was designed to achieve this user request: '{input}'.
-The DataFrame df that we are working with has already been defined and populated with the necessary data, so there is no need to load or create a new one.
-The result of `print(df.head({head_number}))` is:
-{df_head}
-{column_description}
-The execution of the following code that was provided in the previous step resulted in an error:
-```python
-{code}
-```
-
-The error message is: '{error}'
-
-Return a corrected Python code that fixes the error.
-Always include the import statements at the top of the code, and comments and print statements where necessary.
-Use the same format with backticks. Example of the output format with backticks:
-```python
-
-```
-"""
-
-    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
-        return self.generate_steps_no_plot.format(df_head=df.head(head_number), input=user_query,
+    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description):
+        return self.generate_steps_no_plot.format(df_head=df_head, input=user_query,
                                                   column_description=column_description)
 
-    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name,
+    def format_generate_steps_for_plot_save_prompt(self, df_head, user_query, save_plot_name,
                                                    column_description):
         return self.generate_steps_for_plot_save.format(input=user_query, plotname=save_plot_name,
-                                                        df_head=df.head(head_number),
+                                                        df_head=df_head,
                                                         column_description=column_description)
 
-    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query, column_description):
-        return self.generate_steps_for_plot_show.format(input=user_query, df_head=df.head(head_number),
+    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
+        return self.generate_steps_for_plot_show.format(input=user_query, df_head=df_head,
                                                         column_description=column_description)
 
-    def format_generate_code_prompt(self, head_number, df, user_query, plan, column_description):
-        return self.generate_code.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                         head_number=head_number, column_description=column_description)
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
-    def format_generate_code_for_plot_show_prompt(self, head_number, df, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
         # Plan has already included the plt.show() step, so no need to add it here
-        return self.format_generate_code_prompt(head_number, df, user_query, plan, column_description)
+        return self.format_generate_code_prompt(df_head=df_head, user_query=user_query, plan=plan, column_description=column_description)
 
-    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan, column_description,
+    def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
                                                   save_plot_name=""):
-        return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                                       head_number=head_number, column_description=column_description)
-
-    def format_fix_code_prompt(self, head_number, df, user_query, code_to_be_fixed, error_message, column_description):
-        return self.fix_code.format(code=code_to_be_fixed, df_head=df.head(head_number), error=error_message,
-                                    input=user_query, head_number=head_number, column_description=column_description)
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
 
 ############### Prompts for unit testing coder LLM given a plan ###############:
@@ -183,7 +153,7 @@ The user asked the following question: '{input}'.
 Formulate your response as an algorithm, breaking the solution into steps, including values necessary to answer the question, such as values to search for, and, most importantly, names of DataFrame columns.
 
 This algorithm will later be used to write a Python function that takes an existing pandas DataFrame 'df' as an argument and returns the result of the analysis. 
-The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it. Here's how the beginning of the 'df' looks: 
+The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
 Present your algorithm in no more than six simple, clear English steps. 
@@ -218,7 +188,7 @@ Formulate your response as an algorithm, breaking the solution into steps, inclu
 Make sure to state saving the plot to '{plotname}' in the last step. Do not include showing the plot to the user interactively; only save it to the '{plotname}'.
 
 This algorithm will later be used to write Python code and applied to the existing pandas DataFrame `df`. 
-The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
 Present your algorithm in no more than six simple, clear English steps. 
@@ -243,7 +213,7 @@ Formulate your response as an algorithm, breaking the solution into steps, inclu
 Make sure to state showing the plot in the last step.
 
 This algorithm will later be used to write Python code and applied to the existing pandas DataFrame `df`. 
-The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it. Here's the beginning of the 'df': 
+The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
 Present your algorithm in up to six simple, clear English steps. 
@@ -265,7 +235,6 @@ You also have a list of subtasks to be accomplished.
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return the definition of a Python function called `def solve(df):` that accomplishes the following tasks and returns the result of the analysis if needed:
@@ -320,7 +289,6 @@ You also have a list of subtasks to be accomplished.
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return the definition of a Python function called `def solve(df):` that accomplishes the following tasks:
@@ -351,32 +319,30 @@ def solve(df):
 """
 
     # Here, same as in SimplePrompts, but later could, for example, add column description prompts and methods would be different maybe
-    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
-        return self.generate_steps_no_plot.format(df_head=df.head(head_number), input=user_query,
+    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description):
+        return self.generate_steps_no_plot.format(df_head=df_head, input=user_query,
                                                   column_description=column_description)
 
-    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name,
+    def format_generate_steps_for_plot_save_prompt(self, df_head, user_query, save_plot_name,
                                                    column_description):
         return self.generate_steps_for_plot_save.format(input=user_query, plotname=save_plot_name,
-                                                        df_head=df.head(head_number),
+                                                        df_head=df_head,
                                                         column_description=column_description)
 
-    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query, column_description):
-        return self.generate_steps_for_plot_show.format(input=user_query, df_head=df.head(head_number),
+    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
+        return self.generate_steps_for_plot_show.format(input=user_query, df_head=df_head,
                                                         column_description=column_description)
 
-    def format_generate_code_prompt(self, head_number, df, user_query, plan, column_description):
-        return self.generate_code.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                         head_number=head_number, column_description=column_description)
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
-    def format_generate_code_for_plot_show_prompt(self, head_number, df, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
         # Plan has already included the plt.show() step, so no need to add it here
-        return self.format_generate_code_prompt(head_number, df, user_query, plan, column_description)
+        return self.format_generate_code_prompt(df_head, user_query, plan, column_description)
 
-    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan, column_description,
+    def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
                                                   save_plot_name=""):
-        return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                                       head_number=head_number, column_description=column_description)
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
 
 class PromptsSimpleCoderOnly:
@@ -384,7 +350,6 @@ class PromptsSimpleCoderOnly:
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return only the Python code that accomplishes the user query.
@@ -403,7 +368,6 @@ Example of the output format with backticks:
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return only the Python code that accomplishes the user query.
@@ -422,7 +386,6 @@ Example of the output format with backticks:
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return only the Python code that accomplishes the user query.
@@ -437,30 +400,28 @@ Example of the output format with backticks:
 ```
 """
 
-    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
+    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name,
+    def format_generate_steps_for_plot_save_prompt(self, df_head, user_query, save_plot_name,
                                                    column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query, column_description):
+    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_code_prompt(self, head_number, df, user_query, plan, column_description):
-        return self.generate_code.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                         head_number=head_number, column_description=column_description)
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
-    def format_generate_code_for_plot_show_prompt(self, head_number, df, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
         assert not plan, "The plan parameter must not be provided for this prompt strategy."
-        return self.generate_coder_for_plot_show.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                                        head_number=head_number, column_description=column_description)
+        return self.generate_coder_for_plot_show.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
-    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan, column_description,
+    def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
                                                   save_plot_name=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
-        return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                                       head_number=head_number, column_description=column_description,
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan,
+                                                       column_description=column_description,
                                                        save_plot_name=save_plot_name)
 
 
@@ -469,7 +430,6 @@ class PromptsCoderOnlyForFunctionGeneration:
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
@@ -501,7 +461,6 @@ def solve(df):
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
@@ -533,7 +492,6 @@ def solve(df):
 
 You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
-The result of `print(df.head({head_number}))` is:
 {df_head}
 {column_description}
 Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
@@ -559,32 +517,31 @@ def solve(df):
 ```
 """
 
-    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
+    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name,
+    def format_generate_steps_for_plot_save_prompt(self, df_head, user_query, save_plot_name,
                                                    column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query, column_description):
+    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_code_prompt(self, head_number, df, user_query, plan, column_description):
-        return self.generate_code.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                         head_number=head_number, column_description=column_description)
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
-    def format_generate_code_for_plot_show_prompt(self, head_number, df, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        return self.generate_code_for_plot_show.format(input=user_query, head_number=head_number,
-                                                       df_head=df.head(head_number),
+        return self.generate_code_for_plot_show.format(input=user_query,
+                                                       df_head=df_head,
                                                        column_description=column_description,
                                                        plan=plan)
 
-    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan, column_description,
+    def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
                                                   save_plot_name=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
-        return self.generate_code_for_plot_save.format(input=user_query, df_head=df.head(head_number), plan=plan,
-                                                       head_number=head_number, column_description=column_description,
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan,
+                                                       column_description=column_description,
                                                        save_plot_name=save_plot_name)
 
 
@@ -598,7 +555,7 @@ import numpy as np
 def solve(df: pd.DataFrame):
     """ Function to solve the user query: '{input}'.
 
-    DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
+    DataFrame `df` is fixed.
     {df_head}
     {column_description}
 
@@ -622,7 +579,7 @@ import numpy as np
 def solve(df: pd.DataFrame):
     """ Function to create and show the plot to solve the user query: '{input}'.
 
-    DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
+    DataFrame `df` is fixed.
     {df_head}
     {column_description}
 
@@ -646,7 +603,7 @@ import numpy as np
 def solve(df: pd.DataFrame):
     """ Function to create and save the plot to solve the user query: '{input}'.
 
-    DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
+    DataFrame `df` is fixed.
     {df_head}
     {column_description}
 
@@ -663,36 +620,34 @@ def solve(df: pd.DataFrame):
 ```
 '''
 
-    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
+    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name,
+    def format_generate_steps_for_plot_save_prompt(self, df_head, user_query, save_plot_name,
                                                    column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query, column_description):
+    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_code_for_plot_show_prompt(self, head_number, df, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df.head(head_number))
-        return self.generate_code_for_plot_show.format(input=user_query, head_number=head_number,
-                                                       df_head=df_head,
+        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        return self.generate_code_for_plot_show.format(input=user_query, df_head=df_head,
                                                        column_description=column_description,
                                                        plan=plan)
 
-    def format_generate_code_prompt(self, head_number, df, user_query, plan, column_description):
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df.head(head_number))
-        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan,
-                                         head_number=head_number, column_description=column_description)
+        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
-    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan, column_description,
+    def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
                                                   save_plot_name=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df.head(head_number))
+        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
         return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan,
-                                                       head_number=head_number, column_description=column_description,
+                                                       column_description=column_description,
                                                        save_plot_name=save_plot_name)
 
 
@@ -706,7 +661,7 @@ import numpy as np
 def solve(df: pd.DataFrame):
     """ Function to solve the user query: '{input}'.
 
-    DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
+    DataFrame `df` is fixed.
     {df_head}
     {column_description}
 
@@ -727,7 +682,7 @@ import numpy as np
 def solve(df: pd.DataFrame):
     """ Function to create and show the plot to solve the user query: '{input}'.
 
-    DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
+    DataFrame `df` is fixed.
     {df_head}
     {column_description}
 
@@ -748,7 +703,7 @@ import numpy as np
 def solve(df: pd.DataFrame):
     """ Function to create and save the plot to solve the user query: '{input}'.
 
-    DataFrame `df` is fixed. The resut of `print(df.head({head_number}))` is:
+    DataFrame `df` is fixed.
     {df_head}
     {column_description}
 
@@ -762,52 +717,87 @@ def solve(df: pd.DataFrame):
     """
     '''
 
-    def format_generate_steps_no_plot_prompt(self, head_number, df, user_query, column_description):
+    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_steps_for_plot_save_prompt(self, head_number, df, user_query, save_plot_name,
+    def format_generate_steps_for_plot_save_prompt(self, df_head, user_query, save_plot_name,
                                                    column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_steps_for_plot_show_prompt(self, head_number, df, user_query, column_description):
+    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_code_for_plot_show_prompt(self, head_number, df, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df.head(head_number))
-        return self.generate_code_for_plot_show.format(input=user_query, head_number=head_number,
+        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        return self.generate_code_for_plot_show.format(input=user_query,
                                                        df_head=df_head,
                                                        column_description=column_description,
                                                        plan=plan)
 
-    def format_generate_code_prompt(self, head_number, df, user_query, plan, column_description):
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df.head(head_number))
-        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan,
-                                         head_number=head_number, column_description=column_description)
+        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
 
-    def format_generate_code_for_plot_save_prompt(self, head_number, df, user_query, plan, column_description,
+    def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
                                                   save_plot_name=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df.head(head_number))
-        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan,
-                                                       head_number=head_number, column_description=column_description,
+        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description,
                                                        save_plot_name=save_plot_name)
 
 
+class DebugPrompts:
+    basic_debug_prompt = """You are a helpful assistant that corrects the Python code that resulted in an error and returns the corrected code.
+
+The code was designed to achieve this user request: '{input}'.
+The DataFrame df that we are working with has already been defined and populated with the necessary data, so there is no need to load or create a new one.
+
+{column_description}
+
+The execution of the following code that was by a low-quality assistant resulted in an error:
+```python
+{code}
+```
+
+The error message was: "{error}".
+
+Return only corrected Python code that fixes the error.
+Use the same format with backticks.
+If part of the code is not defined, or the whole code is a complete nonsense, define or rewrite it.
+"""
+
+    completion_debug_prompt = '''The code was designed to achieve this user request: '{input}'.
+Here is the code that needs to be fixed:
+## Faulty code:
+```python
+{code}
+```
+
+## Error message:
+The error message is: "{error}"
+
+Don't test the code by creating new DataFrames or print statements, only correct the code.
+
+## Corrected solution:
+{initial_coder_prompt}
+'''
+
+
+
 class Prompts:
-    def __init__(self, str_strategy: PromptsSimple |
-                                     PromptsForFunctionGeneration |
-                                     PromptsSimpleCoderOnly |
-                                     PromptsCoderOnlyForFunctionGeneration |
-                                     PromptsCoderOnlyInfillingForFunctionGeneration |
-                                     PromptsCoderOnlyCompletionForFunctionGeneration,
-                 head_number: int,
-                 add_column_description: bool = False
+    def __init__(self,
+                 str_strategy: str, # one of "simple", "coder_only_simple", "functions", "coder_only_functions", "coder_only_infilling_functions", "coder_only_completion_functions"
+                 head_number: int, # number of rows to show in the head of the DataFrame
+                 add_column_description: bool = False, # adds json with column names and sample values to the prompt if True
+                 n_column_samples: int = 0, # number of sample values to show for each column
+                 debug_strategy: str = "basic", # one of "basic", "completion"
                  ):
 
         self.head_number = head_number
         self.add_column_description = add_column_description
+        self.n_column_samples = n_column_samples
 
         strats = {"simple" : PromptsSimple(),
                   "coder_only_simple" : PromptsSimpleCoderOnly(),
@@ -816,43 +806,62 @@ class Prompts:
                   "coder_only_infilling_functions": PromptsCoderOnlyInfillingForFunctionGeneration(),
                   "coder_only_completion_functions": PromptsCoderOnlyCompletionForFunctionGeneration()}
 
+        debug_strats = {"basic": DebugPrompts.basic_debug_prompt, # str
+                        "completion": DebugPrompts.completion_debug_prompt}
+
         if str_strategy in strats:
             self.strategy = strats[str_strategy]
         else:
-            raise Exception(f"{RED}Unknown prompt strategy!{RESET}")
+            raise Exception(f"{RED}Unknown {CYAN}coder{RED} prompt strategy! See __init__ of Prompts() in prompts.py{RESET}")
+
+        if debug_strategy in debug_strats:
+            self.debug_strategy = debug_strats[debug_strategy]
+        else:
+            raise Exception(f"{RED}Unknown {CYAN}debug{RED} prompt strategy! See __init__ of Prompts() in prompts.py{RESET}")
 
     def column_description(self, df):  # Changes if we change the 'df' from outside. Creates description dynamically.
         if self.add_column_description:
-            return """\nHere is also a list of column names along with the first sample values for your convenience (each column is represented as a separate json object within a list):\n""" \
-                + str([{"column_name": c, "sample_values": df[c].head(self.head_number).tolist()} for c in
-                       df.columns]) + "\n"
+            start = """\nHere is also a list of column names{sample_values}for your convenience (each column is represented as a separate json object within a list):\n"""
+            if self.n_column_samples > 0:
+                start = start.format(sample_values=" along with the first sample values ")
+                return start + str([{"column_name": c, "sample_values": df[c].head(self.n_column_samples).tolist()} for c in df.columns])
+            else: # no sample values included
+                return  start.format(sample_values=" ") + str([{"column_name": c} for c in df.columns])
+        return ""
+
+    def head_print(self, df):
+        if self.head_number > 0:
+            return """ 
+The resut of `print(df.head({head_number}))` is:
+""" + df.head(self.head_number).to_string()
         return ""
 
     def generate_steps_no_plot_prompt(self, df, user_query):
-        return self.strategy.format_generate_steps_no_plot_prompt(self.head_number, df, user_query,
+        return self.strategy.format_generate_steps_no_plot_prompt(self.head_print(df), user_query,
                                                                   self.column_description(df))
 
     def generate_steps_for_plot_save_prompt(self, df, user_query, save_plot_name):
-        return self.strategy.format_generate_steps_for_plot_save_prompt(self.head_number, df, user_query,
+        return self.strategy.format_generate_steps_for_plot_save_prompt(self.head_print(df), user_query,
                                                                         save_plot_name, self.column_description(df))
 
     def generate_steps_for_plot_show_prompt(self, df, user_query):
-        return self.strategy.format_generate_steps_for_plot_show_prompt(self.head_number, df, user_query,
+        return self.strategy.format_generate_steps_for_plot_show_prompt(self.head_print(df), user_query,
                                                                         self.column_description(df))
 
     def generate_code_prompt(self, df, user_query, plan):
-        return self.strategy.format_generate_code_prompt(self.head_number, df, user_query, plan,
+        return self.strategy.format_generate_code_prompt(self.head_print(df), user_query, plan,
                                                          self.column_description(df))
 
     def generate_code_for_plot_show_prompt(self, df, user_query, plan):
-        return self.strategy.format_generate_code_for_plot_show_prompt(self.head_number, df, user_query, plan,
+        return self.strategy.format_generate_code_for_plot_show_prompt(self.head_print(df), user_query, plan,
                                                                        self.column_description(df))
 
     def generate_code_for_plot_save_prompt(self, df, user_query, plan, save_plot_name=""):
-        return self.strategy.format_generate_code_for_plot_save_prompt(self.head_number, df, user_query, plan,
+        return self.strategy.format_generate_code_for_plot_save_prompt(self.head_print(df), user_query, plan,
                                                                        self.column_description(df),
                                                                        save_plot_name=save_plot_name)
 
-    def fix_code_prompt(self, df, user_query, code_to_be_fixed, error_message):
-        return PromptsSimple().format_fix_code_prompt(self.head_number, df, user_query, code_to_be_fixed, error_message,
-                                                      self.column_description(df))
+    def fix_code_prompt(self, df, user_query, code_to_be_fixed, error_message, initial_coder_prompt):
+        return self.debug_strategy.format(code=code_to_be_fixed, df_head=self.head_print(df), error=error_message,
+                                          input=user_query, head_number=self.head_number, column_description=self.column_description(df),
+                                          initial_coder_prompt=initial_coder_prompt)
