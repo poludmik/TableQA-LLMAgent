@@ -24,19 +24,18 @@ class Code:
 
     # Method to clean the LLM response, and extract the code.
     @staticmethod
-    def extract_code(response: str, provider: str, show_plot=False, model_name: str = "") -> str:
+    def extract_code(response: str, provider: str, show_plot=False, model_name: str = "", prompt_strategy: str = "") -> str:
         # Use re.sub to replace all occurrences of the <|im_sep|> with the ```.
         response = re.sub(re.escape("<|im_sep|>"), "```", response)
 
         # cuts off the response after the first return statement or plt.show() or plt.savefig()
-
-        if "Python-hf" in model_name:
+        if "Python-hf" in model_name or (prompt_strategy == "coder_only_completion_functions" and "Magicoder" in model_name):
             pattern = r"(^\s{4,}return\s+.*$|^\s*(plt\.show\(\s*\)|plt\.savefig\(\s*.+\s*\))\s*$)"
             match = re.search(pattern, response, flags=re.MULTILINE)
             print("match:", match)
 
             if match:
-                print("Python-hf model returned a match for the pattern - cutting")
+                print("Model returned a match for the pattern - cutting")
                 cut_off_point = match.end()
                 print("cut_off_point:", cut_off_point)
                 response = response[:cut_off_point]

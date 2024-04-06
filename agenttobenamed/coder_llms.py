@@ -192,6 +192,25 @@ class CodeLlamaBaseCoder(CoderLLM):
         return final_result_function, already_loaded_model
 
 
+class MagiCoder(CoderLLM):
+    def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = None,
+              bit: int = None) -> tuple[str, PeftModel]:
+
+        if not already_loaded_model:
+            generator = pipeline(
+                model=model_name,
+                task="text-generation",
+                torch_dtype=torch.bfloat16,
+                device_map="auto",
+            )
+        else:
+            generator = already_loaded_model
+
+        result = generator(input_text, max_length=1024, num_return_sequences=1, temperature=0.0)
+        print(">>>" + result[0]["generated_text"] + "<<<")
+        return result[0]["generated_text"], generator
+
+
 class WizardCoder(CoderLLM):
 
     def query(self, model_name: str, input_text: str) -> str:

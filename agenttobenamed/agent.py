@@ -171,7 +171,7 @@ class AgentTBN:
         if self.collect_inputs_for_completion:
             return "collecting input prompts", coder_prompt
 
-        code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot, model_name=self.coder_model)  # 'local' removes the definition of a new df if there is one
+        code_to_execute = Code.extract_code(generated_code, provider=self.provider, show_plot=show_plot, model_name=self.coder_model, prompt_strategy=self.prompt_strategy)  # 'local' removes the definition of a new df if there is one
         details["first_generated_code"] = code_to_execute
 
         if "import pandas as pd" not in code_to_execute or "import matplotlib.pyplot as plt" not in code_to_execute:

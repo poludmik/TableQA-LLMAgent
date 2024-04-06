@@ -277,6 +277,14 @@ class LLM:
                                                                           adapter_path=adapter_path,
                                                                           bit=quantization_bits)
             return answer, instruction_prompt
+        
+        elif llm.startswith("ise-uiuc/Magicoder-S-CL-"):
+            answer, self.local_coder_model = MagiCoder().query(llm,
+                                                                instruction_prompt,
+                                                                already_loaded_model=self.local_coder_model,
+                                                                adapter_path=adapter_path,
+                                                                bit=quantization_bits)
+            return answer, instruction_prompt
 
         elif llm.startswith("WizardLM/WizardCoder-"):  # under 34B
             return WizardCoder().query(llm, instruction_prompt), instruction_prompt

@@ -30,7 +30,7 @@ def main(config_path: str = "config.yaml"):
     tokenizer.pad_token_id = 0 # <unk>, llama doesn't have a padding token?
     tokenizer.padding_side = "left"
 
-    datasets = load_dataset("poludmik/code_completion_for_data_analysis", split="train")  # everything is in the train split on HF
+    datasets = load_dataset(cfg.hf.repo, split="train")  # everything is in the train split on HF
 
     def tokenize_function(examples):
         texts = list(map(lambda x,y: x + y + "</s>", examples["input"], examples["output"]))

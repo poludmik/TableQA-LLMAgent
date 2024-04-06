@@ -23,3 +23,5 @@ copied/
 finetuning/lora/cp/
 cluster_venv_4/
 ml_loads.txt
+debugger_tests.py
+test_magicoder.py
