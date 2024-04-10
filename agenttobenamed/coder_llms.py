@@ -15,9 +15,9 @@ class CoderLLM:
         pass
 
 class GPTCoder(CoderLLM):
-    def query(self, model_name: str, input_text: str) -> str:
+    def query(self, model_name: str, input_text: str, temperature: int = 0) -> str:
         # print(f"***{input_text}***")
-        chat_model = ChatOpenAI(model=model_name, temperature=0)
+        chat_model = ChatOpenAI(model=model_name, temperature=temperature)
         messages = [HumanMessage(content=input_text)]
         res = chat_model.invoke(messages).content
         # print(f"Text:>>>>{res}<<<<")
