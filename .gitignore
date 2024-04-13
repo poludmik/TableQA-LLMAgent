@@ -23,3 +23,5 @@ ml_loads.txt
 debugger_tests.py
 test_magicoder.py
 /dataset/debugger_finetuning_data/
+.pytest_cache/
+bin/
