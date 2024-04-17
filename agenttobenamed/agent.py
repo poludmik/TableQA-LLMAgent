@@ -114,8 +114,10 @@ class AgentTBN:
             self._df = pd.read_csv(file_path)
         elif file_path.endswith('.xlsx'):
             self._df = pd.read_excel(file_path)
+        elif file_path.endswith('.parquet'):
+            self._df = pd.read_parquet(file_path)
         else:
-            raise Exception("Only CSVs and XLSX files are currently supported.")
+            raise Exception("Only CSV, XLSX, and Parquet files are currently supported.")
 
     def load_new_df(self, new_file_path: str):
         """
