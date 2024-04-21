@@ -432,7 +432,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
-Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
+Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis (a Dataframe, a list, a number, a string, etc.).
 Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must use the backticks to enclose the code.
 Only show the visualizations if the user query explicitly asks for them (plot, chart, etc.).
@@ -443,17 +443,10 @@ Here are examples of the output format:
 Example format:
 ```python
 def solve(df):
-    # Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
-    <CODE>
-
-    # Extract the 5 rows from the sorted DataFrame.
-    <CODE>
-
-    # Create a list of the 'Country' column from the extracted DataFrame.
-    <CODE>
-
-    # Return the list of countries.
-    return <RESULT>
+    # Code to achieve the user query
+    
+    # Finally return the result
+    return result
 ```
 """
 
