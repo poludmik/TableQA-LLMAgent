@@ -300,9 +300,6 @@ class LLM:
         elif llm.startswith("WizardLM/WizardCoder-"):  # under 34B
             answer =  WizardCoder().query(llm, instruction_prompt)
 
-        elif llm == "ise-uiuc/Magicoder-S-CL-7B":  # doesn't really work yet
-            answer = CodeLlamaInstructCoder().query(llm, instruction_prompt)
-
         else:
             raise Exception(f"{RED}[LLM.generate_code() in llms.py] Model name: {llm} was not recognized.{RESET}")
 

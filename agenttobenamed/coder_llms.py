@@ -163,7 +163,7 @@ class CodeLlamaBaseCoder(CoderLLM):
                     # bnb_8bit_compute_dtype=torch.float16 if bit == "8" else torch.bfloat16,
                 ),
             )
-            if adapter_path != "":
+            if adapter_path:
                 adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
                 already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path)
 
@@ -180,6 +180,7 @@ class CodeLlamaBaseCoder(CoderLLM):
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
             max_new_tokens=max_new_tokens,
+            temperature=temperature,
         )
 
         text = tokenizer.decode(output[0], skip_special_tokens=True)
@@ -196,20 +197,62 @@ class CodeLlamaBaseCoder(CoderLLM):
 class MagiCoder(CoderLLM):
     def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = None,
               bit: int = None) -> tuple[str, PeftModel]:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-        if not already_loaded_model:
-            generator = pipeline(
-                model=model_name,
-                task="text-generation",
-                torch_dtype=torch.bfloat16,
-                device_map="auto",
+        max_new_tokens = 300
+        temperature = 1e-9
+
+        if bit:
+            print(f"    Model '{model_name}' is quantized with {CYAN}{bit} bits.{RESET}")
+
+        if already_loaded_model is None:
+            already_loaded_model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                device_map={"": 0},
+                quantization_config=BitsAndBytesConfig(
+                    load_in_4bit=True if bit == 4 else False,
+                    load_in_8bit=True if bit == 8 else False,
+                    # bnb_4bit_compute_dtype=torch.bfloat16,
+                    # bnb_4bit_use_double_quant=True,
+                    # bnb_4bit_quant_type='nf4',
+                ) if bit else None,
+                # low_cpu_mem_usage=True
             )
-        else:
-            generator = already_loaded_model
+            if adapter_path:
+                adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
+                print(f"    Loading {CYAN}adapter{RESET} from '{adapter_path}'")
+                already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path, offload_folder="finetuning/lora/offload/codellama_python")
+        already_loaded_model.config.use_cache = False
+        already_loaded_model.eval()
 
-        result = generator(input_text, max_length=1024, num_return_sequences=1, temperature=0.0)
-        print(">>>" + result[0]["generated_text"] + "<<<")
-        return result[0]["generated_text"], generator
+        # format prompt here:
+        prompt = """You are an exceptionally intelligent coding assistant that consistently delivers accurate and reliable responses to user instructions.
+
+@@ Instruction
+{instruction}
+
+@@ Response
+"""
+        prompt = prompt.format(instruction=input_text)
+
+        def generate(m, user_question, max_new_tokens_local=max_new_tokens, top_p=1, temp=temperature):
+            inputs = tokenizer(user_question, return_tensors="pt").to('cuda')
+            outputs = m.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens_local,
+            )
+            text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            print("Text:****\n", text, "****")
+
+            if bool(re.search(r"CodeLlama-\d+b-Instruct-hf", model_name)):
+                text = re.sub(r'\[INST\].*?\[/INST\]', '', text, flags=re.DOTALL)
+            return text
+        
+        output = generate(already_loaded_model, prompt)
+        # remove the prompt from the output
+        output = output.split("@@ Response")[1].strip()
+
+        return output, already_loaded_model
 
 
 class WizardCoder(CoderLLM):

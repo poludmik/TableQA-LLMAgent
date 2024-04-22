@@ -6,7 +6,7 @@ wandb:
 hyperparameters:
   seed: 228
   split_ratio: 0.01 # 0.1% of the data is used for validation
-  output_dir: "finetuning/lora/cp/another_codellama_4targets/"
+  output_dir: "finetuning/lora/cp/another_codellama_7targets/"
   overwrite_output_dir: True
   per_device_train_batch_size: 1
   per_device_eval_batch_size: 1
@@ -35,6 +35,6 @@ hyperparameters:
     r: 8
     alpha: 16
     dropout: 0.05
-    target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"] #['gate_proj', 'down_proj', 'up_proj'],#["q_proj", "v_proj"],
+    target_modules: ["gate_proj", "q_proj", "v_proj", "k_proj", "o_proj", 'down_proj', 'up_proj'] #['gate_proj',],#["q_proj", "v_proj"], []
     bias: "none"
     task_type: "CAUSAL_LM"

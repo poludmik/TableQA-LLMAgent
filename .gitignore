@@ -26,4 +26,8 @@ test_magicoder.py
 /dataset/debugger_finetuning_data/
 .pytest_cache/
 bin/
+
+# Evaluating agents on cluster:
 setup_for_tests.sh
+nohup.out
+tmp_CL_Python_coder_only_QLoRA_test15631219101_at_1713699771385393964.csv
