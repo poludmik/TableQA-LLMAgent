@@ -1,11 +1,13 @@
+import json
+
 from .logger import *
 
 class StringOperations:
 
     @staticmethod
-    def prepend_column_desc_and_df_head(column_description, df_head):
+    def prepend_column_desc_and_df_head(column_description, df_head, column_annotations=""):
         tab = " " * 4
-        return tab + column_description.replace('\n', '\n' + tab), tab + df_head.replace('\n', '\n' + tab)
+        return tab + column_description.replace('\n', '\n' + tab), tab + df_head.replace('\n', '\n' + tab), column_annotations.replace('\n', '\n' + tab)
 
 
 class PromptsSimple:
@@ -19,6 +21,7 @@ This algorithm will later be used to write Python code and applied to the existi
 The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
+{column_annotation}
 Present your algorithm in up to six simple, clear English steps. 
 Remember to explain steps rather than to write code.
 You must output only these steps, the code generation assistant is going to follow them.
@@ -40,6 +43,7 @@ This algorithm will later be used to write Python code and applied to the existi
 The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
+{column_annotation}
 Present your algorithm in up to six simple, clear English steps. 
 Remember to explain steps rather than to write code.
 You must output only these steps, the code generation assistant is going to follow them.
@@ -61,6 +65,7 @@ This algorithm will later be used to write Python code and applied to the existi
 The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
+{column_annotation}
 Present your algorithm with at most six simple, clear English steps. 
 Remember to explain steps rather than to write code.
 Don't include any visualization steps like plots or charts.
@@ -81,6 +86,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return only the Python code that accomplishes the following tasks:
 {plan}
 
@@ -103,6 +109,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return only the Python code that accomplishes the following tasks:
 {plan}
 
@@ -119,30 +126,32 @@ Example of the output format with backticks:
 ```
 """
 
-    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description):
+    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description, column_annotation):
         return self.generate_steps_no_plot.format(df_head=df_head, input=user_query,
-                                                  column_description=column_description)
+                                                  column_description=column_description,
+                                                  column_annotation=column_annotation)
 
     def format_generate_steps_for_plot_save_prompt(self, df_head, user_query, save_plot_name,
-                                                   column_description):
+                                                   column_description, column_annotation):
         return self.generate_steps_for_plot_save.format(input=user_query, plotname=save_plot_name,
                                                         df_head=df_head,
-                                                        column_description=column_description)
+                                                        column_description=column_description,
+                                                        column_annotation=column_annotation)
 
-    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
+    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description, column_annotation):
         return self.generate_steps_for_plot_show.format(input=user_query, df_head=df_head,
-                                                        column_description=column_description)
+                                                        column_description=column_description, column_annotation=column_annotation)
 
-    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
-        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description, column_annotation):
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
-    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description, column_annotation):
         # Plan has already included the plt.show() step, so no need to add it here
-        return self.format_generate_code_prompt(df_head=df_head, user_query=user_query, plan=plan, column_description=column_description)
+        return self.format_generate_code_prompt(df_head=df_head, user_query=user_query, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
     def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
-                                                  save_plot_name=""):
-        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+                                                  save_plot_name="", column_annotation=""):
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
 
 ############### Prompts for unit testing coder LLM given a plan ###############:
@@ -156,6 +165,7 @@ This algorithm will later be used to write a Python function that takes an exist
 The DataFrame 'df' is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
+{column_annotation}
 Present your algorithm in no more than six simple, clear English steps. 
 Focus on explaining the steps rather than writing code. 
 Do not include any visualization steps, such as plots or charts. 
@@ -191,6 +201,7 @@ This algorithm will later be used to write Python code and applied to the existi
 The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
+{column_annotation}
 Present your algorithm in no more than six simple, clear English steps. 
 Focus on explaining the steps rather than writing code. 
 You must only output these steps; the code generation assistant will follow them to implement the solution.
@@ -216,6 +227,7 @@ This algorithm will later be used to write Python code and applied to the existi
 The DataFrame `df` is already defined and populated with necessary data. So there is no need to define it again or load it.
 {df_head}
 {column_description}
+{column_annotation}
 Present your algorithm in up to six simple, clear English steps. 
 Remember to explain steps rather than to write code.
 You must output only these steps, the code generation assistant is going to follow them.
@@ -237,6 +249,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return the definition of a Python function called `def solve(df):` that accomplishes the following tasks and returns the result of the analysis if needed:
 {plan}
 
@@ -291,6 +304,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return the definition of a Python function called `def solve(df):` that accomplishes the following tasks:
 {plan}
 
@@ -319,30 +333,32 @@ def solve(df):
 """
 
     # Here, same as in SimplePrompts, but later could, for example, add column description prompts and methods would be different maybe
-    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description):
+    def format_generate_steps_no_plot_prompt(self, df_head, user_query, column_description, column_annotation):
         return self.generate_steps_no_plot.format(df_head=df_head, input=user_query,
-                                                  column_description=column_description)
+                                                  column_description=column_description,
+                                                  column_annotation=column_annotation)
 
     def format_generate_steps_for_plot_save_prompt(self, df_head, user_query, save_plot_name,
-                                                   column_description):
+                                                   column_description, column_annotation):
         return self.generate_steps_for_plot_save.format(input=user_query, plotname=save_plot_name,
                                                         df_head=df_head,
-                                                        column_description=column_description)
+                                                        column_description=column_description,
+                                                        column_annotation=column_annotation)
 
-    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
+    def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description, column_annotation):
         return self.generate_steps_for_plot_show.format(input=user_query, df_head=df_head,
-                                                        column_description=column_description)
+                                                        column_description=column_description, column_annotation=column_annotation)
 
-    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
-        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description, column_annotation):
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
-    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description, column_annotation):
         # Plan has already included the plt.show() step, so no need to add it here
-        return self.format_generate_code_prompt(df_head, user_query, plan, column_description)
+        return self.format_generate_code_prompt(df_head, user_query, plan, column_description, column_annotation)
 
     def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
-                                                  save_plot_name=""):
-        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+                                                  save_plot_name="", column_annotation=""):
+        return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
 
 class PromptsSimpleCoderOnly:
@@ -352,6 +368,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return only the Python code that accomplishes the user query.
 Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must include print statements to output the final result of your code.
@@ -370,6 +387,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return only the Python code that accomplishes the user query.
 Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 At the end of the code, show the created visualization with `plt.show()`.
@@ -388,6 +406,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return only the Python code that accomplishes the user query.
 Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must not include `plt.show()`. Just save the plot to '{save_plot_name}' with `plt.savefig('{save_plot_name}')`.
@@ -410,19 +429,19 @@ Example of the output format with backticks:
     def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
-        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description, column_annotation):
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
-    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description, column_annotation):
         assert not plan, "The plan parameter must not be provided for this prompt strategy."
-        return self.generate_coder_for_plot_show.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+        return self.generate_coder_for_plot_show.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
     def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
-                                                  save_plot_name=""):
+                                                  save_plot_name="", column_annotation=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
         return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan,
                                                        column_description=column_description,
-                                                       save_plot_name=save_plot_name)
+                                                       save_plot_name=save_plot_name, column_annotation=column_annotation)
 
 
 class PromptsCoderOnlyForFunctionGeneration:
@@ -432,6 +451,7 @@ A pandas DataFrame named `df` is fixed.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis (a DataFrame, a list, a number, a string, etc.).
 Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must use the backticks to enclose the code.
@@ -453,6 +473,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
 Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must use the backticks to enclose the code.
@@ -484,6 +505,7 @@ You have been presented with a pandas DataFrame named `df`.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
+{column_annotation}
 Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis.
 Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must not include `plt.show()`. Just save the plot to '{save_plot_name}' with `plt.savefig('{save_plot_name}')`.
@@ -517,22 +539,23 @@ def solve(df):
     def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
-        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description, column_annotation):
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
-    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description, column_annotation):
         assert not plan, "This prompt strategy does not support generating code from a plan."
         return self.generate_code_for_plot_show.format(input=user_query,
                                                        df_head=df_head,
                                                        column_description=column_description,
-                                                       plan=plan)
+                                                       plan=plan,
+                                                       column_annotation=column_annotation)
 
     def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
-                                                  save_plot_name=""):
+                                                  save_plot_name="", column_annotation=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
         return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan,
                                                        column_description=column_description,
-                                                       save_plot_name=save_plot_name)
+                                                       save_plot_name=save_plot_name, column_annotation=column_annotation)
 
 
 class PromptsCoderOnlyInfillingForFunctionGeneration:
@@ -548,6 +571,7 @@ def solve(df: pd.DataFrame):
     DataFrame `df` is fixed.
     {df_head}
     {column_description}
+    {column_annotation}
 
     Args:
         df: pandas DataFrame
@@ -572,6 +596,7 @@ def solve(df: pd.DataFrame):
     DataFrame `df` is fixed.
     {df_head}
     {column_description}
+    {column_annotation}
 
     Args:
         df: pandas DataFrame
@@ -596,6 +621,7 @@ def solve(df: pd.DataFrame):
     DataFrame `df` is fixed.
     {df_head}
     {column_description}
+    {column_annotation}
 
     Function doesn't use `plt.show()`, the plot is only saved to '{save_plot_name}' with `plt.savefig('{save_plot_name}')`.
 
@@ -620,25 +646,25 @@ def solve(df: pd.DataFrame):
     def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description, column_annotation):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        column_description, df_head, column_annotation = StringOperations.prepend_column_desc_and_df_head(column_description, df_head, column_annotation)
         return self.generate_code_for_plot_show.format(input=user_query, df_head=df_head,
                                                        column_description=column_description,
-                                                       plan=plan)
+                                                       plan=plan, column_annotation=column_annotation)
 
-    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description, column_annotation):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
-        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+        column_description, df_head, column_annotation = StringOperations.prepend_column_desc_and_df_head(column_description, df_head, column_annotation)
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
     def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
-                                                  save_plot_name=""):
+                                                  save_plot_name="", column_annotation=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        column_description, df_head, column_annotation = StringOperations.prepend_column_desc_and_df_head(column_description, df_head, column_annotation)
         return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan,
                                                        column_description=column_description,
-                                                       save_plot_name=save_plot_name)
+                                                       save_plot_name=save_plot_name, column_annotation=column_annotation)
 
 
 class PromptsCoderOnlyCompletionForFunctionGeneration:
@@ -654,6 +680,7 @@ def solve(df: pd.DataFrame):
     DataFrame `df` is fixed.
     {df_head}
     {column_description}
+    {column_annotation}
 
     Args:
         df: pandas DataFrame
@@ -675,6 +702,7 @@ def solve(df: pd.DataFrame):
     DataFrame `df` is fixed.
     {df_head}
     {column_description}
+    {column_annotation}
 
     Args:
         df: pandas DataFrame
@@ -696,6 +724,7 @@ def solve(df: pd.DataFrame):
     DataFrame `df` is fixed.
     {df_head}
     {column_description}
+    {column_annotation}
 
     Function doesn't use `plt.show()`, the plot is only saved to '{save_plot_name}' with `plt.savefig('{save_plot_name}')`.
 
@@ -717,25 +746,26 @@ def solve(df: pd.DataFrame):
     def format_generate_steps_for_plot_show_prompt(self, df_head, user_query, column_description):
         raise Exception("This prompt strategy does not support generating steps.")
 
-    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description):
+    def format_generate_code_for_plot_show_prompt(self, df_head, user_query, plan, column_description, column_annotation):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        column_description, df_head, column_annotation = StringOperations.prepend_column_desc_and_df_head(column_description, df_head, column_annotation)
         return self.generate_code_for_plot_show.format(input=user_query,
                                                        df_head=df_head,
                                                        column_description=column_description,
-                                                       plan=plan)
+                                                       plan=plan,
+                                                       column_annotation=column_annotation)
 
-    def format_generate_code_prompt(self, df_head, user_query, plan, column_description):
+    def format_generate_code_prompt(self, df_head, user_query, plan, column_description, column_annotation):
         assert not plan, "This prompt strategy does not support generating code from a plan."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
-        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description)
+        column_description, df_head, column_annotation = StringOperations.prepend_column_desc_and_df_head(column_description, df_head, column_annotation)
+        return self.generate_code.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description, column_annotation=column_annotation)
 
     def format_generate_code_for_plot_save_prompt(self, df_head, user_query, plan, column_description,
-                                                  save_plot_name=""):
+                                                  save_plot_name="", column_annotation=""):
         assert save_plot_name, "The save_plot_name parameter must be provided for this prompt strategy."
-        column_description, df_head = StringOperations.prepend_column_desc_and_df_head(column_description, df_head)
+        column_description, df_head, column_annotation = StringOperations.prepend_column_desc_and_df_head(column_description, df_head, column_annotation)
         return self.generate_code_for_plot_save.format(input=user_query, df_head=df_head, plan=plan, column_description=column_description,
-                                                       save_plot_name=save_plot_name)
+                                                       save_plot_name=save_plot_name, column_annotation=column_annotation)
 
 
 class DebugPrompts:
@@ -743,8 +773,9 @@ class DebugPrompts:
 
 The code was designed to achieve this user request: '{input}'.
 The DataFrame df that we are working with has already been defined and populated with the necessary data, so there is no need to load or create a new one.
-
+{df_head}
 {column_description}
+{col_annotation}
 
 The execution of the following code that was by a low-quality assistant resulted in an error:
 ```python
@@ -826,32 +857,40 @@ The resut of `print(df.head({self.head_number}))` is:
 """ + df.head(self.head_number).to_string()
         return ""
 
-    def generate_steps_no_plot_prompt(self, df, user_query):
+    @staticmethod
+    def prepend_col_annotation(column_annotation):
+        if column_annotation is not None:
+            return f"Here is also a JSON description of columns of the DataFrame 'df':\n{json.dumps(column_annotation, indent=4)}"
+        return ""
+
+    def generate_steps_no_plot_prompt(self, df, user_query, column_annotation):
         return self.strategy.format_generate_steps_no_plot_prompt(self.head_print(df), user_query,
-                                                                  self.column_description(df))
+                                                                  self.column_description(df), column_annotation)
 
-    def generate_steps_for_plot_save_prompt(self, df, user_query, save_plot_name):
+    def generate_steps_for_plot_save_prompt(self, df, user_query, save_plot_name, column_annotation):
         return self.strategy.format_generate_steps_for_plot_save_prompt(self.head_print(df), user_query,
-                                                                        save_plot_name, self.column_description(df))
+                                                                        save_plot_name, self.column_description(df), column_annotation)
 
-    def generate_steps_for_plot_show_prompt(self, df, user_query):
+    def generate_steps_for_plot_show_prompt(self, df, user_query, column_annotation):
         return self.strategy.format_generate_steps_for_plot_show_prompt(self.head_print(df), user_query,
-                                                                        self.column_description(df))
+                                                                        self.column_description(df), column_annotation)
 
-    def generate_code_prompt(self, df, user_query, plan):
+    def generate_code_prompt(self, df, user_query, plan, column_annotation):
         return self.strategy.format_generate_code_prompt(self.head_print(df), user_query, plan,
-                                                         self.column_description(df))
+                                                         self.column_description(df),
+                                                         self.prepend_col_annotation(column_annotation))
 
-    def generate_code_for_plot_show_prompt(self, df, user_query, plan):
+    def generate_code_for_plot_show_prompt(self, df, user_query, plan, column_annotation):
         return self.strategy.format_generate_code_for_plot_show_prompt(self.head_print(df), user_query, plan,
-                                                                       self.column_description(df))
+                                                                       self.column_description(df), column_annotation)
 
-    def generate_code_for_plot_save_prompt(self, df, user_query, plan, save_plot_name=""):
+    def generate_code_for_plot_save_prompt(self, df, user_query, plan, save_plot_name="", column_annotation=""):
         return self.strategy.format_generate_code_for_plot_save_prompt(self.head_print(df), user_query, plan,
                                                                        self.column_description(df),
-                                                                       save_plot_name=save_plot_name)
+                                                                       save_plot_name=save_plot_name, column_annotation=column_annotation)
 
-    def fix_code_prompt(self, df, user_query, code_to_be_fixed, error_message, initial_coder_prompt):
+    def fix_code_prompt(self, df, user_query, code_to_be_fixed, error_message, initial_coder_prompt, column_annotation):
         return self.debug_strategy.format(code=code_to_be_fixed, df_head=self.head_print(df), error=error_message,
                                           input=user_query, head_number=self.head_number, column_description=self.column_description(df),
-                                          initial_coder_prompt=initial_coder_prompt)
+                                          initial_coder_prompt=initial_coder_prompt,
+                                          col_annotation=Prompts.prepend_col_annotation(column_annotation))

@@ -1,3 +1,4 @@
+import json
 import os
 
 import pandas as pd
@@ -29,6 +30,7 @@ class AgentTBN:
                  use_assistants_api=False,
                  query_type=None, # fixes query type for all upcoming queries
                  collect_inputs_for_completion=False,
+                 data_specs_dir_path: str | None = None, # annotation for each column of the table
                  ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
@@ -57,6 +59,9 @@ class AgentTBN:
         self._user_set_plan = None
         self._tagged_query_type = None
         self._prompt_user_for_planner = None
+
+        self.data_specs_dir_path = data_specs_dir_path
+        self._data_specs = None
 
         self.user_has_fixed_query_type = True if query_type else False
         self.fixed_query_type = query_type
@@ -104,6 +109,24 @@ class AgentTBN:
             print(f"DataFrame from {GREEN}{self.filename}{RESET} is being loaded...")
             self._load_df_from_file(self._table_file_path)
         return self._df
+
+    @property
+    def data_specs(self):
+        """
+        Loaded JSON file containing data specifications for data or None if such data specifications are not avaialable
+        or not wanted - achieved by setting `self.data_specs_dir_path` for None.
+        """
+        if self.data_specs_dir_path is None:
+            return None
+        if self._data_specs is None: # if not loaded yet, load it
+            try:
+                data_specs_path = os.path.join(self.data_specs_dir_path)
+                with open(data_specs_path) as f:
+                    self._data_specs = json.load(f)
+            except:
+                print(f"{RED}Data specifications could not be loaded from {self.data_specs_dir_path}!{RESET}")
+                self._data_specs = None
+        return self._data_specs
 
     def _load_df_from_file(self, file_path):
         """
@@ -176,7 +199,7 @@ class AgentTBN:
 
         plan = self._user_set_plan
         if self._user_set_plan is None and not self.prompt_strategy.startswith("coder_only"): # Not skipping the reasoning part
-            plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type)
+            plan, self._prompt_user_for_planner = self.llm_calls.plan_steps_with_gpt(query, self.df, save_plot_name=possible_plotname, query_type=self._tagged_query_type, column_annotation=self.data_specs)
 
         generated_code, coder_prompt = self.llm_calls.generate_code(query, self.df,
                                                                plan=plan, # could be None
@@ -186,7 +209,8 @@ class AgentTBN:
                                                                quantization_bits=self.coder_quantization_bits,
                                                                adapter_path=self.coder_adapter_path,
                                                                save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
-                                                               collect_input_prompts=self.collect_inputs_for_completion
+                                                               collect_input_prompts=self.collect_inputs_for_completion,
+                                                               column_annotation=self.data_specs,
                                                                )
 
         if self.collect_inputs_for_completion:
@@ -221,6 +245,7 @@ class AgentTBN:
                                                                           code_to_debug=code_to_execute,
                                                                           error_message=exception,
                                                                           initial_coder_prompt=coder_prompt,
+                                                                          column_annotation=self.data_specs,
                                                                           )
             code_to_execute = Code.extract_code(code_to_execute, provider=self.provider)
             code_to_execute = Code.preprocess_extracted_code(code_to_execute, self.prompt_strategy)

@@ -7,6 +7,7 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 from operator import itemgetter
 from openai import OpenAI
+from deprecated import deprecated
 
 import time
 from enum import Enum
@@ -117,10 +118,11 @@ class LLM:
 
         return query_topic
 
-    # Halts on chain.invoke() sometimes
+    @deprecated(reason="This method is obsolete and does not work with some of the features of the current implementation.")
     def get_prompt_from_router(self, user_query, df, save_plot_name=None):
         """
         Select a prompt between the one saving the plot and the one calculating some math.
+        Halts on chain.invoke() sometimes.
         """
         print(f"{BLUE}[OPENAI TAG] SELECTING A PROMPT:{RESET}")
         temlate_for_plot_planner = self.prompts.generate_steps_for_plot_show_prompt(df, user_query)
@@ -201,15 +203,15 @@ class LLM:
         print(f"{BLUE}ASSISTANT MESSAGE{RESET}: {messages.data[0].content[0].text.value}")
         return messages.data[0].content[0].text.value
 
-    def plan_steps_with_gpt(self, user_query, df, save_plot_name, query_type=None):
+    def plan_steps_with_gpt(self, user_query, df, save_plot_name, query_type=None, column_annotation=""):
         print(f"{BLUE}[{self.model}] PLANNING STEPS{RESET}: {YELLOW}{self.model}{RESET}")
 
         assert query_type is not None, "query_type must be specified (tagged before calling this function)"
 
-        temlate_for_plot_planner = self.prompts.generate_steps_for_plot_show_prompt(df, user_query)
+        temlate_for_plot_planner = self.prompts.generate_steps_for_plot_show_prompt(df, user_query, column_annotation)
         if save_plot_name is not None:
-            temlate_for_plot_planner = self.prompts.generate_steps_for_plot_save_prompt(df, user_query, save_plot_name)
-        temlate_for_math_planner = self.prompts.generate_steps_no_plot_prompt(df, user_query)
+            temlate_for_plot_planner = self.prompts.generate_steps_for_plot_save_prompt(df, user_query, save_plot_name, column_annotation)
+        temlate_for_math_planner = self.prompts.generate_steps_no_plot_prompt(df, user_query, column_annotation)
 
         selected_prompt = temlate_for_math_planner
         if query_type == "plot":
@@ -233,22 +235,23 @@ class LLM:
                       code_to_debug: str = "", # instead of generating code, debug this one
                       error_message: str = "", # error message to be fixed
                       initial_coder_prompt: str = "",
+                      column_annotation=None, # a loaded json object with column descriptions
                       ):
         assert code_to_debug and error_message or (not code_to_debug and not error_message), "code_to_debug and error_message must be specified together"
 
         if code_to_debug:
             print(f"{BLUE}[{llm}] DEBUGGING CODE{RESET}: {YELLOW}{llm}{RESET}")
-            instruction_prompt = self.prompts.fix_code_prompt(df, user_query, code_to_debug, error_message, initial_coder_prompt)
+            instruction_prompt = self.prompts.fix_code_prompt(df, user_query, code_to_debug, error_message, initial_coder_prompt, column_annotation)
         else:
             print(f"{BLUE}[{llm}] GENERATING CODE{RESET}: {YELLOW}{llm}{RESET}")
             if tagged_query_type == "general":
                 print(f"    {CYAN}General{RESET} prompt used.")
-                instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan)
+                instruction_prompt = self.prompts.generate_code_prompt(df, user_query, plan, column_annotation)
             else:  # "plot"
                 if show_plot:
                     # use `plt.show()` in the generated code
                     print(f"    {CYAN}Show plot{RESET} prompt used.")
-                    instruction_prompt = self.prompts.generate_code_for_plot_show_prompt(df, user_query, plan)
+                    instruction_prompt = self.prompts.generate_code_for_plot_show_prompt(df, user_query, plan, column_annotation)
                 else:
                     # don't include plt.show() in the generated code, save the image to `save_plot_name`
                     print(f"    {CYAN}Save plot{RESET} prompt used.")
