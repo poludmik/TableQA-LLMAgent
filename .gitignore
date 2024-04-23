@@ -12,6 +12,7 @@ evaluation/conf/config_collect_skip_reasoning.yaml
 /dataset/Text2Analysis/
 dataset/completion_finetuning_data/*
 dataset/completion_finetuning_data/merge_t2a_and_250.py
+dataset/instruction_finetuning_data/*
 testing/
 testing_old/
 testing_new/

@@ -428,17 +428,14 @@ Example of the output format with backticks:
 class PromptsCoderOnlyForFunctionGeneration:
     generate_code = """You are really good with Python and the pandas library. The user provided a query that you need to help achieve: '{input}'.
 
-You have been presented with a pandas DataFrame named `df`.
+A pandas DataFrame named `df` is fixed.
 The DataFrame `df` has already been defined and populated with the required data, so don't load it and don't create a new one.
 {df_head}
 {column_description}
-Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis (a Dataframe, a list, a number, a string, etc.).
+Return the definition of a Python function called `def solve(df):` that accomplishes the user query and returns the result of the analysis (a DataFrame, a list, a number, a string, etc.).
 Basic ibraries are already imported: pandas as pd, matplotlib.pyplot as plt, and numpy as np, so you don't need to import those.
 You must use the backticks to enclose the code.
-Only show the visualizations if the user query explicitly asks for them (plot, chart, etc.).
-Do not test the function with anything similar to `print(solve(df))`, only define the function, in the format of the following example:
-
-Here are examples of the output format:
+Do not test the function with anything similar to `print(solve(df))`, only define the function to answer the user query, in the format of the following example:
 
 Example format:
 ```python
@@ -824,8 +821,8 @@ class Prompts:
 
     def head_print(self, df):
         if self.head_number > 0:
-            return """ 
-The resut of `print(df.head({head_number}))` is:
+            return f""" 
+The resut of `print(df.head({self.head_number}))` is:
 """ + df.head(self.head_number).to_string()
         return ""
 
