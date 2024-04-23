@@ -34,11 +34,13 @@ questions_new = copy.deepcopy(questions)
 for i, question in questions.iterrows():
     agent = AgentTBN(f"dataset/dataset_tables/{question['table_name']}",
                      max_debug_times=0,
-                     prompt_strategy="coder_only_completion_functions",
-                     coder_model="codellama/CodeLlama-7b-Python-hf", # Has no infilling mode, best for completion
+                     prompt_strategy="coder_only_functions",
+                     coder_model="codellama/CodeLlama-7b-Instruct-hf", # Has no infilling mode, best for completion
                      add_column_description=True,
+                     n_column_samples=2,
+                     head_number=2,
                      tagging_strategy="openai", #"openai", "zero_shot_classification"
-                     quantization_bits=None, # for codellamas from HF: 4, 8
+                     coder_quantization_bits=None, # for codellamas from HF: 4, 8
                      collect_inputs_for_completion=True,
                      query_type="general"
                      )
@@ -59,9 +61,9 @@ for i, question in questions.iterrows():
     cut_code = "\n".join(cut_code)
     cut_code = cut_code + "\n```"
 
-    questions_new.at[i, "completed_code"] = cut_code
+    questions_new.at[i, "completed_code"] = "```python\ndef solve(df):\n" + cut_code
 
-questions_new.to_excel("dataset/dataset_less_than_250_without_plots_for_completion.xlsx", index=False)
+questions_new.to_excel("dataset/dataset_less_than_250_without_plots_for_instruct.xlsx", index=False)
 
 
 # Forgot to add backticks
