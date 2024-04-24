@@ -4,39 +4,10 @@ import os
 import pandas as pd
 import random
 import hydra
-
-"""
-  tables_dataset_dir: dataset/dataset_tables/
-  excel: dataset/dataset_82_gpt35_functions.xlsx
-  max_debug_times: 0
-  head_number: 2
-  add_column_description: False
-  n_column_samples: 2
-
-  tagging_strategy: openai
-  query_type: plot
-
-  propmt_strategy: coder_only_functions
-
-  gpt_model: gpt-3.5-turbo-1106
-
-  coder_model: gpt-3.5-turbo-1106
-  coder_adapter_path: ""
-  coder_quantization_bits:
-
-  debug_model: gpt-3.5-turbo-1106
-  debug_adapter_path: ""
-  debug_quantization_bits:
-  debug_strategy: basic
-
-  output_dir: evaluation/plots_ER/
-  output_filename: plots_ER_gpt35_0debug_colsampl2.xlsx
-
-  skip_reasoning: False
-"""
+import argparse
 
 
-@hydra.main(config_path="conf", config_name="config_ER_plots_gpt35turbo_save.yaml", version_base="1.1")
+@hydra.main(config_path="conf", config_name="Provide config.yaml!", version_base="1.1")
 def main(cfg):
     tables_dataset_dir = cfg.params.tables_dataset_dir
     clean_excel = cfg.params.excel_with_queries
