@@ -859,21 +859,21 @@ The resut of `print(df.head({self.head_number}))` is:
 
     @staticmethod
     def prepend_col_annotation(column_annotation):
-        if column_annotation is not None:
+        if column_annotation:
             return f"Here is also a JSON description of columns of the DataFrame 'df':\n{json.dumps(column_annotation, indent=4)}"
         return ""
 
     def generate_steps_no_plot_prompt(self, df, user_query, column_annotation):
         return self.strategy.format_generate_steps_no_plot_prompt(self.head_print(df), user_query,
-                                                                  self.column_description(df), column_annotation)
+                                                                  self.column_description(df), self.prepend_col_annotation(column_annotation))
 
     def generate_steps_for_plot_save_prompt(self, df, user_query, save_plot_name, column_annotation):
         return self.strategy.format_generate_steps_for_plot_save_prompt(self.head_print(df), user_query,
-                                                                        save_plot_name, self.column_description(df), column_annotation)
+                                                                        save_plot_name, self.column_description(df), self.prepend_col_annotation(column_annotation))
 
     def generate_steps_for_plot_show_prompt(self, df, user_query, column_annotation):
         return self.strategy.format_generate_steps_for_plot_show_prompt(self.head_print(df), user_query,
-                                                                        self.column_description(df), column_annotation)
+                                                                        self.column_description(df), self.prepend_col_annotation(column_annotation))
 
     def generate_code_prompt(self, df, user_query, plan, column_annotation):
         return self.strategy.format_generate_code_prompt(self.head_print(df), user_query, plan,
@@ -882,12 +882,12 @@ The resut of `print(df.head({self.head_number}))` is:
 
     def generate_code_for_plot_show_prompt(self, df, user_query, plan, column_annotation):
         return self.strategy.format_generate_code_for_plot_show_prompt(self.head_print(df), user_query, plan,
-                                                                       self.column_description(df), column_annotation)
+                                                                       self.column_description(df), self.prepend_col_annotation(column_annotation))
 
     def generate_code_for_plot_save_prompt(self, df, user_query, plan, save_plot_name="", column_annotation=""):
         return self.strategy.format_generate_code_for_plot_save_prompt(self.head_print(df), user_query, plan,
                                                                        self.column_description(df),
-                                                                       save_plot_name=save_plot_name, column_annotation=column_annotation)
+                                                                       save_plot_name=save_plot_name, column_annotation=self.prepend_col_annotation(column_annotation))
 
     def fix_code_prompt(self, df, user_query, code_to_be_fixed, error_message, initial_coder_prompt, column_annotation):
         return self.debug_strategy.format(code=code_to_be_fixed, df_head=self.head_print(df), error=error_message,
