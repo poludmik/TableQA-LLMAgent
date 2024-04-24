@@ -19,6 +19,7 @@ class TestPrompts:
         })
         user_query = "Plot happiness_index values"
         plan = None
+        column_annotation = None
 
-        formatted = prompts.generate_code_prompt(df, user_query, plan)
+        formatted = prompts.generate_code_prompt(df, user_query, plan, column_annotation)
         assert type(formatted) == str and len(formatted) > 0
