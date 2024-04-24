@@ -32,3 +32,8 @@ bin/
 setup_for_tests.sh
 nohup.out
 tmp_CL_Python_coder_only_QLoRA_test15631219101_at_1713699771385393964.csv
+
+
+# Evaluation of plots:
+evaluation/plots_ER/
+dataset/plots_only/
