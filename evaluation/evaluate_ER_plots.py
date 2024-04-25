@@ -1,11 +1,18 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath('.'))
+
 from agenttobenamed import AgentTBN
 import time
-import os
 import pandas as pd
 import random
 import hydra
 import argparse
 
+"""
+Run this with `python3 evaluation/evaluate_ER_plots.py --config-name config_ER_plots_CL13B_8bit_Instruct_coder_only_0debug_save.yaml`
+"""
 
 @hydra.main(config_path="conf", config_name="Provide config.yaml!", version_base="1.1")
 def main(cfg):
@@ -115,7 +122,7 @@ def main(cfg):
             for key in details.keys():
                 dataset_df.loc[index, key] = details[key]
 
-            dataset_df.to_excel(save_dataset_path, index=False)
+            # dataset_df.to_excel(save_dataset_path, index=False)
 
         except Exception as e:
             print("Exception:", e)

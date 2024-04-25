@@ -485,17 +485,10 @@ Here are examples of the output format:
 Example format:
 ```python
 def solve(df):
-    # Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
-    <CODE>
-
-    # Extract the 5 rows from the sorted DataFrame.
-    <CODE>
-
-    # Create a pie plot of the 'GDP' column of the extracted DataFrame.
-    <CODE>
-
-    # Save the pie plot to 'plots/example_plot00.png'.
-    <CODE>
+    # Code to achieve the user query
+    
+    # Finally show the plot
+    plt.show()
 ```
 """
 
@@ -515,17 +508,10 @@ Do not test the function with anything similar to `print(solve(df))`, only defin
 Here is an example of the output format:
 ```python
 def solve(df):
-    # Sort the DataFrame `df` in descending order based on the 'happiness_index' column.
-    <CODE>
-
-    # Extract the 5 rows from the sorted DataFrame.
-    <CODE>
-
-    # Create a pie plot of the 'GDP' column of the extracted DataFrame.
-    <CODE>
-
-    # Save the pie plot to 'plots/example_plot00.png'.
-    <CODE>
+    # Code to achieve the user query
+    
+    # Finally save the plot
+    plt.savefig('{save_plot_name}')
 ```
 """
 

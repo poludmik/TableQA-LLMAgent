@@ -1,0 +1,30 @@
+params:
+  tables_dataset_dir: dataset/plots_only/all_tables_used/
+  excel_with_queries: dataset/plots_only/plots_only_queries.xlsx
+  max_debug_times: 0
+  head_number: 2
+  add_column_description: True
+  n_column_samples: 2
+
+  show_plot: False
+
+  tagging_strategy: openai
+  query_type: plot
+
+  propmt_strategy: coder_only_functions
+
+  gpt_model: gpt-3.5-turbo-1106
+
+  coder_model: codellama/CodeLlama-7b-Instruct-hf
+  coder_adapter_path: ""
+  coder_quantization_bits:
+
+  debug_model: gpt-3.5-turbo-1106
+  debug_adapter_path: ""
+  debug_quantization_bits:
+  debug_strategy: basic
+
+  output_dir: evaluation/plots_ER/results_plots_ER_CL7B_Instruct_coder_only_0debug_colsampl2_save/
+  output_filename: plots_ER_CL7B_Instruct_coder_only_0debug_colsampl2_save.xlsx
+
+  skip_reasoning: False

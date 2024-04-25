@@ -131,16 +131,22 @@ class AgentTBN:
     def _load_df_from_file(self, file_path):
         """
         Internal method to load a DataFrame from a given file path.
-        Supports CSV and Excel files.
+        Uses context managers for CSV and extends handling to XLSX and Parquet files.
         """
-        if file_path.endswith('.csv'):
-            self._df = pd.read_csv(file_path)
-        elif file_path.endswith('.xlsx'):
-            self._df = pd.read_excel(file_path)
-        elif file_path.endswith('.parquet'):
-            self._df = pd.read_parquet(file_path)
-        else:
-            raise Exception("Only CSV, XLSX, and Parquet files are currently supported.")
+        try:
+            if file_path.endswith('.csv'):
+                with open(file_path, 'r') as f: # ensure closing the file
+                    self._df = pd.read_csv(f)
+            elif file_path.endswith('.xlsx'):
+                self._df = pd.read_excel(file_path)
+            elif file_path.endswith('.parquet'):
+                with open(file_path, 'rb') as f:
+                    self._df = pd.read_parquet(f)
+            else:
+                raise ValueError("Supported file formats are: CSV, XLSX, and Parquet.")
+        except Exception as e:
+            print(f"Error loading file {file_path}: {e}")
+            raise
 
     def load_new_df(self, new_file_path: str):
         """
