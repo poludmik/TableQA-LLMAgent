@@ -23,7 +23,7 @@ Here are some examples of correct answers, agent's answers and their scores:
 2        Mechanical     2022-2023                              1316                          649                      1965           1009              956                     362
 ", agent's answer: "[1588, 1513, 1965]", score: 1.
 
-- Correct answer: "{[2023-03-11, 2023-03-31, 2023-02-19]}", agent's answer: "0   2023-02-19
+- Correct answer: "[2023-03-11, 2023-03-31, 2023-02-19]", agent's answer: "0   2023-02-19
 1   2023-03-11
 8   2023-03-31
 Name: Last restock date, dtype: datetime64[ns]
