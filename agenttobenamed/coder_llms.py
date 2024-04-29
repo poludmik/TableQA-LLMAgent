@@ -10,6 +10,15 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndB
 from .logger import *
 
 
+
+def activate_adapter(model, peft_model_id):
+    model = PeftModel.from_pretrained(model, peft_model_id)
+    # model.merge_adapter()
+    model.merge_and_unload()
+    print(f"{GREEN}Model adapter activated{RESET}")
+    return model
+
+
 class CoderLLM:
     def query(self, model_name: str, input_text: str) -> str:
         pass
@@ -33,7 +42,7 @@ class CodeLlamaInstructCoder(CoderLLM):
         if isdir(checkpoint_dir):
             is_completed = exists(checkpoint_dir) and "checkpoint" in checkpoint_dir
             if is_completed:
-                print("what")
+                print("'checkpoint' in adapter_path, returning it.")
                 return checkpoint_dir, True  # already finished
             max_step = 0
             for filename in os.listdir(checkpoint_dir):
@@ -47,7 +56,7 @@ class CodeLlamaInstructCoder(CoderLLM):
         return None, False  # first training
 
     def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = None,
-              bit: int = None) -> tuple[str, PeftModel]:
+              bit: int = None, base_adapter_path : str = "") -> tuple[str, PeftModel]:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         max_new_tokens = 300
@@ -69,10 +78,16 @@ class CodeLlamaInstructCoder(CoderLLM):
                 ) if bit else None,
                 # low_cpu_mem_usage=True
             )
+
+            if base_adapter_path:
+                base_adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(base_adapter_path)
+                already_loaded_model = activate_adapter(already_loaded_model, base_adapter_path)
+
             if adapter_path:
                 adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
                 print(f"    Loading {CYAN}adapter{RESET} from '{adapter_path}'")
                 already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path, offload_folder="finetuning/lora/offload/codellama_python")
+
         already_loaded_model.config.use_cache = False
         already_loaded_model.eval()
 
@@ -147,7 +162,7 @@ class CodeLlamaInstructCoder(CoderLLM):
 class CodeLlamaBaseCoder(CoderLLM):
 
     def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = "",
-              bit: int = None) -> str:
+              bit: int = None, base_adapter_path : str = "") -> str:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         if bit:
@@ -163,6 +178,11 @@ class CodeLlamaBaseCoder(CoderLLM):
                     # bnb_8bit_compute_dtype=torch.float16 if bit == "8" else torch.bfloat16,
                 ),
             )
+
+            if base_adapter_path:
+                base_adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(base_adapter_path)
+                already_loaded_model = activate_adapter(already_loaded_model, base_adapter_path)
+
             if adapter_path:
                 adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
                 already_loaded_model = PeftModel.from_pretrained(already_loaded_model, adapter_path)
@@ -196,7 +216,7 @@ class CodeLlamaBaseCoder(CoderLLM):
 
 class MagiCoder(CoderLLM):
     def query(self, model_name: str, input_text: str, already_loaded_model=None, adapter_path: str = None,
-              bit: int = None) -> tuple[str, PeftModel]:
+              bit: int = None, base_adapter_path: str = None) -> tuple[str, PeftModel]:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         max_new_tokens = 300
@@ -218,6 +238,11 @@ class MagiCoder(CoderLLM):
                 ) if bit else None,
                 # low_cpu_mem_usage=True
             )
+
+            if base_adapter_path:
+                base_adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(base_adapter_path)
+                already_loaded_model = activate_adapter(already_loaded_model, base_adapter_path)
+
             if adapter_path:
                 adapter_path, _ = CodeLlamaInstructCoder.get_last_checkpoint(adapter_path)
                 print(f"    Loading {CYAN}adapter{RESET} from '{adapter_path}'")

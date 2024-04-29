@@ -236,6 +236,7 @@ class LLM:
                       error_message: str = "", # error message to be fixed
                       initial_coder_prompt: str = "",
                       column_annotation=None, # a loaded json object with column descriptions
+                      base_adapter_path="",
                       ):
         assert code_to_debug and error_message or (not code_to_debug and not error_message), "code_to_debug and error_message must be specified together"
 
@@ -269,7 +270,8 @@ class LLM:
                                                                             instruction_prompt,
                                                                             already_loaded_model=self.local_coder_model,
                                                                             adapter_path=adapter_path,
-                                                                            bit=quantization_bits)
+                                                                            bit=quantization_bits,
+                                                                            base_adapter_path=base_adapter_path)
 
         elif bool(re.search(r"CodeLlama-\d+b-hf", llm)):
             if not isinstance(self.prompts.strategy, PromptsCoderOnlyInfillingForFunctionGeneration) and \
@@ -280,7 +282,8 @@ class LLM:
                                                                           instruction_prompt,
                                                                           already_loaded_model=self.local_coder_model,
                                                                           adapter_path=adapter_path,
-                                                                          bit=quantization_bits)
+                                                                          bit=quantization_bits,
+                                                                          base_adapter_path=base_adapter_path)
 
         elif bool(re.search(r"CodeLlama-\d+b-Python-hf", llm)):
             if not isinstance(self.prompts.strategy, PromptsCoderOnlyCompletionForFunctionGeneration):
@@ -289,7 +292,8 @@ class LLM:
                                                                           instruction_prompt,
                                                                           already_loaded_model=self.local_coder_model,
                                                                           adapter_path=adapter_path,
-                                                                          bit=quantization_bits)
+                                                                          bit=quantization_bits,
+                                                                          base_adapter_path=base_adapter_path)
             return answer, instruction_prompt
         
         elif llm.startswith("ise-uiuc/Magicoder-S-CL-"):
@@ -297,7 +301,8 @@ class LLM:
                                                                 instruction_prompt,
                                                                 already_loaded_model=self.local_coder_model,
                                                                 adapter_path=adapter_path,
-                                                                bit=quantization_bits)
+                                                                bit=quantization_bits,
+                                                                base_adapter_path=base_adapter_path)
             return answer, instruction_prompt
 
         elif llm.startswith("WizardLM/WizardCoder-"):  # under 34B

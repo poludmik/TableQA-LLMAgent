@@ -1,0 +1,40 @@
+hf:
+  repo: "poludmik/code_completion_for_data_analysis"
+wandb:
+  entity: "poludmik"
+  project: "codellama_LoRA"
+hyperparameters:
+  seed: 228
+  split_ratio: 0.01
+  output_dir: "finetuning/lora/cp/upd_codellama_gate_only_lr3_r8/"
+  overwrite_output_dir: True
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  eval_accumulation_steps: 1
+  eval_steps: 5
+  optim: "paged_adamw_32bit"
+  save_steps: 50
+  logging_steps: 5
+  group_by_length: True
+  ddp_find_unused_parameters: False
+  run_name: "Upd_dataset_on_2000_pandas"
+  learning_rate: 0.0003
+  max_grad_norm: 0.2
+  max_steps: 850
+  warmup_ratio: 0.1
+  weight_decay: 0.1
+  fp16: True
+  evaluation_strategy: "steps"
+  lr_scheduler_type: "cosine"
+  # min_lr_ratio: 0.3 # last_lr = min_lr_ratio * learning_rate
+  gradient_checkpointing: True
+  trainer:
+    # max_seq_length: 1520 # isn't used
+  lora_config:
+    r: 8
+    alpha: 16
+    dropout: 0.05
+    target_modules: ["gate_proj"] #['gate_proj',],#["q_proj", "v_proj"], []
+    bias: "none"
+    task_type: "CAUSAL_LM"

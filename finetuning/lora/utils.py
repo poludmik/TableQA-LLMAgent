@@ -2,6 +2,7 @@ from transformers.integrations import WandbCallback
 import pandas as pd
 # from agenttobenamed.logger import *
 import yaml
+from peft import LoraConfig, get_peft_model, PeftModel
 
 from datetime import datetime
 
@@ -130,3 +131,11 @@ class DotDict(dict):
 def load_config(yaml_file_path):
     with open(yaml_file_path, 'r') as file:
         return yaml.safe_load(file)
+    
+
+def activate_adapter(model, peft_model_id):
+    model = PeftModel.from_pretrained(model, peft_model_id)
+    # model.merge_adapter()
+    model.merge_and_unload()
+    print(f"{GREEN}Model adapter activated{RESET}")
+    return model
