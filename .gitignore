@@ -27,6 +27,7 @@ test_magicoder.py
 /dataset/debugger_finetuning_data/
 .pytest_cache/
 bin/
+finetuning/lora/merged_models/
 
 # Evaluating agents on cluster:
 setup_for_tests.sh

@@ -31,6 +31,7 @@ class AgentTBN:
                  query_type=None, # fixes query type for all upcoming queries
                  collect_inputs_for_completion=False,
                  data_specs_dir_path: str | None = None, # annotation for each column of the table
+                 base_adapter_path="", # adapter to be loaded before the coder adapter
                  ):
         self.filename = Path(table_file_path).name
         self.head_number = head_number
@@ -54,6 +55,8 @@ class AgentTBN:
         self.debug_quantization_bits = debug_quantization_bits
         self.debug_strategy = debug_strategy
         self.max_debug_times = max_debug_times
+
+        self.base_adapter_path = base_adapter_path
 
         # for skipping the reasoning part
         self._user_set_plan = None
@@ -214,6 +217,7 @@ class AgentTBN:
                                                                llm=self.coder_model,
                                                                quantization_bits=self.coder_quantization_bits,
                                                                adapter_path=self.coder_adapter_path,
+                                                               base_adapter_path=self.base_adapter_path,
                                                                save_plot_name=possible_plotname, # for the "coder_only" prompt strategies
                                                                collect_input_prompts=self.collect_inputs_for_completion,
                                                                column_annotation=self.data_specs,
