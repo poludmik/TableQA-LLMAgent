@@ -250,6 +250,7 @@ class AgentTBN:
             # code_to_execute = Code.remove_result_storage_lines(code_to_execute) if self.prompt_strategy.endswith("functions") else code_to_execute
             code_to_execute, debug_prompt = self.llm_calls.generate_code(query, self.df,
                                                                           llm=self.debug_model,
+                                                                          show_plot=show_plot,
                                                                           quantization_bits=self.debug_quantization_bits,
                                                                           adapter_path=self.debug_adapter_path,
                                                                           code_to_debug=code_to_execute,
@@ -257,7 +258,7 @@ class AgentTBN:
                                                                           initial_coder_prompt=coder_prompt,
                                                                           column_annotation=self.data_specs,
                                                                           )
-            code_to_execute = Code.extract_code(code_to_execute, provider=self.provider)
+            code_to_execute = Code.extract_code(code_to_execute, provider=self.provider, show_plot=show_plot)
             code_to_execute = Code.preprocess_extracted_code(code_to_execute, self.prompt_strategy)
             print(f"{YELLOW}>>>>>>> Formatted code:{RESET}\n{code_to_execute}")
             res, exception = Code.execute_generated_code(code_to_execute, self.df, self._tagged_query_type)

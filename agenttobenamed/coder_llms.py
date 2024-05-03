@@ -3,6 +3,7 @@ import re
 from os.path import exists, join, isdir
 import torch
 from langchain.chat_models import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain.schema import HumanMessage
 from peft import PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
@@ -30,6 +31,14 @@ class GPTCoder(CoderLLM):
         messages = [HumanMessage(content=input_text)]
         res = chat_model.invoke(messages).content
         # print(f"Text:>>>>{res}<<<<")
+        return res
+
+
+class ClaudeCoder(CoderLLM):
+    def query(self, model_name: str, input_text: str, temperature: int = 0) -> str:
+        chat_model = ChatAnthropic(model=model_name)
+        messages = [HumanMessage(content=input_text)]
+        res = chat_model.invoke(messages).content
         return res
 
 

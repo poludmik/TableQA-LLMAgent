@@ -265,6 +265,9 @@ class LLM:
         if llm.startswith("gpt"):
             answer = GPTCoder().query(llm, instruction_prompt)
 
+        elif "claude" in llm:
+            answer = ClaudeCoder().query(llm, instruction_prompt)
+
         elif bool(re.search(r"CodeLlama-\d+b-Instruct-hf", llm)):
             answer, self.local_coder_model = CodeLlamaInstructCoder().query(llm,
                                                                             instruction_prompt,
