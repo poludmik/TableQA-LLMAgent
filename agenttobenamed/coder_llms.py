@@ -36,7 +36,7 @@ class GPTCoder(CoderLLM):
 
 class ClaudeCoder(CoderLLM):
     def query(self, model_name: str, input_text: str, temperature: int = 0) -> str:
-        chat_model = ChatAnthropic(model=model_name)
+        chat_model = ChatAnthropic(model=model_name, temperature=temperature)
         messages = [HumanMessage(content=input_text)]
         res = chat_model.invoke(messages).content
         return res

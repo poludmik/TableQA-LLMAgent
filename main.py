@@ -15,7 +15,7 @@ agent = AgentTBN(csv_path,
                  add_column_description=True,
                  n_column_samples=2,
 
-                 # data_specs_dir_path="dataset/private/driving_cycles_specs.json",
+                 data_specs_dir_path="dataset/private/driving_cycles_specs.json",
 
                  tagging_strategy="openai",  # "openai", "zero_shot_classification"
                  # query_type="general",
