@@ -1,7 +1,7 @@
 import copy
 
 import pandas as pd
-from agenttobenamed import AgentTBN
+from tableqallmagent import LLMAgent
 
 
 def cut_before_solve_function(code_str: str):
@@ -32,15 +32,15 @@ questions_new = copy.deepcopy(questions)
 
 # run agent on each question
 for i, question in questions.iterrows():
-    agent = AgentTBN(f"dataset/dataset_tables/{question['table_name']}",
+    agent = LLMAgent(f"dataset/dataset_tables/{question['table_name']}",
                      max_debug_times=0,
                      prompt_strategy="coder_only_functions",
-                     coder_model="codellama/CodeLlama-7b-Instruct-hf", # Has no infilling mode, best for completion
+                     coder_model="codellama/CodeLlama-7b-Instruct-hf",  # Has no infilling mode, best for completion
                      add_column_description=True,
                      n_column_samples=2,
                      head_number=2,
-                     tagging_strategy="openai", #"openai", "zero_shot_classification"
-                     coder_quantization_bits=None, # for codellamas from HF: 4, 8
+                     tagging_strategy="openai",  #"openai", "zero_shot_classification"
+                     coder_quantization_bits=None,  # for codellamas from HF: 4, 8
                      collect_inputs_for_completion=True,
                      query_type="general"
                      )

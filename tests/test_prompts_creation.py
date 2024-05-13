@@ -1,4 +1,4 @@
-from agenttobenamed.prompts import Prompts
+from tableqallmagent.prompts import Prompts
 import pandas as pd
 
 class TestPrompts:

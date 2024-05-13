@@ -1,5 +1,5 @@
 import random
-from agenttobenamed import AgentTBN
+from tableqallmagent import LLMAgent
 import time
 import os
 import pandas as pd
@@ -25,7 +25,7 @@ for index, row in dataset_df.iterrows():
     if row["user_query"] == "" or row["user_query"] == "nan": # for the last row with plot counts
         continue
 
-    agent = AgentTBN(folder_path + row["table_name"],
+    agent = LLMAgent(folder_path + row["table_name"],
                      max_debug_times=max_debug_times,
                      gpt_model=llm_model,
                      head_number=head_number

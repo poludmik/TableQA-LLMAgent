@@ -1,6 +1,6 @@
 from transformers.integrations import WandbCallback
 import pandas as pd
-# from agenttobenamed.logger import *
+# from tableqallmagent.logger import *
 import yaml
 from peft import LoraConfig, get_peft_model, PeftModel
 

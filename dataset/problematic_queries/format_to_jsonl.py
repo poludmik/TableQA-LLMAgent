@@ -5,7 +5,7 @@ import datasets
 import pandas as pd
 from datasets import Dataset, DatasetDict
 
-from agenttobenamed import AgentTBN
+from tableqallmagent import LLMAgent
 
 folder_path = "dataset/dataset_tables/"
 dataset_df = pd.read_excel("dataset/problematic_queries/spec_queries.xlsx")
@@ -13,7 +13,7 @@ dataset_df = pd.read_excel("dataset/problematic_queries/spec_queries.xlsx")
 new_df = pd.DataFrame(columns=["input", "output"])
 
 for index, row in dataset_df.iterrows():
-    agent = AgentTBN(folder_path + row["table_name"],
+    agent = LLMAgent(folder_path + row["table_name"],
                      max_debug_times=0,
                      gpt_model="gpt-3.5-turbo-1106",
                      head_number=2,

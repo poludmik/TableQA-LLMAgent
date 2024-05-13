@@ -6,7 +6,7 @@ from openai import OpenAI
 import openai
 from tqdm import tqdm
 
-from agenttobenamed.coder_llms import *
+from tableqallmagent.coder_llms import *
 
 def num_tokens_from_string(string: str) -> int:
     """Returns the number of tokens in a text string."""

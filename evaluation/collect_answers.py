@@ -1,4 +1,4 @@
-from agenttobenamed import AgentTBN
+from tableqallmagent import LLMAgent
 import time
 import os
 import pandas as pd
@@ -52,7 +52,7 @@ def main(cfg):
             if row["table_name"] != prev_table_name:
                 prev_table_name = row["table_name"]
                 print("Processing table:", prev_table_name)
-                agent = AgentTBN(tables_dataset_dir + row["table_name"],
+                agent = LLMAgent(tables_dataset_dir + row["table_name"],
                                  max_debug_times=max_debug_times,
                                  gpt_model=reasoning_llm,
                                  coder_model=coding_llm,

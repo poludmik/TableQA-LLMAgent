@@ -3,13 +3,13 @@ import os
 
 sys.path.append(os.path.abspath('.'))
 
-from agenttobenamed import AgentTBN
+from tableqallmagent import LLMAgent
 import time
 import pandas as pd
 import random
 import hydra
 import argparse
-from agenttobenamed.logger import *
+from tableqallmagent.logger import *
 
 """
 Run this with `python3 evaluation/tagginh_accuracy_test.py --config-name config_kek.yaml`
@@ -74,7 +74,7 @@ def main(cfg):
 
     dataset_df = pd.read_excel(clean_excel).astype(str)
 
-    agent = AgentTBN("",  # csv_path,
+    agent = LLMAgent("",  # csv_path,
                      max_debug_times=max_debug_times,
                      head_number=head_number,
                      add_column_description=add_column_description,

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "agenttobenamed"
+name = "tableqallmagent"
 version = "0.1.14"
 description = ""
 authors = ["poludmik <michael.poludin@gmail.com>"]

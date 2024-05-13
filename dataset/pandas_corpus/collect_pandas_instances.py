@@ -5,7 +5,7 @@ Goes through every page of documentation on https://pandas.pydata.org/docs/refer
 from bs4.element import NavigableString, Tag
 import requests
 from bs4 import BeautifulSoup
-from agenttobenamed.logger import *
+from tableqallmagent.logger import *
 import pandas as pd
 
 # The main API reference page

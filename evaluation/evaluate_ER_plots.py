@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.abspath('.'))
 
-from agenttobenamed import AgentTBN
+from tableqallmagent import LLMAgent
 import time
 import pandas as pd
 import random
@@ -73,7 +73,7 @@ def main(cfg):
 
     dataset_df = pd.read_excel(clean_excel).astype(str)
 
-    agent = AgentTBN("",  # csv_path,
+    agent = LLMAgent("",  # csv_path,
                      max_debug_times=max_debug_times,
                      head_number=head_number,
                      add_column_description=add_column_description,
