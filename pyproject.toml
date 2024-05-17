@@ -23,6 +23,8 @@ peft = "^0.10.0"
 deprecated = "^1.2.14"
 langsmith = "0.1.53"
 langchain-anthropic = "^0.1.11"
+yattag = "^1.15.2"
+fastparquet = "^2024.2.0"
 
 [build-system]
 requires = ["poetry-core"]

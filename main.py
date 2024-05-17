@@ -22,7 +22,7 @@ agent = LLMAgent(csv_path,
 
                  prompt_strategy="coder_only_functions",  # "functions", "simple", "coder_only_simple", "coder_only_functions", "coder_only_infilling_functions"
                  # coder_model="claude-3-sonnet-20240229",  # "claude-2.1", "claude-3-haiku-20240307", "gpt-4-turbo-2024-04-09", "gpt-3.5-turbo-1106",
-                 coder_model="gpt-3.5-turbo-1106",
+                 coder_model="gpt-4o",
                  # coder_model="codellama/CodeLlama-7b-Instruct-hf",
                  # coder_model="codellama/CodeLlama-7b-Python-hf",  # Has no infilling mode, best for completion
                  #  coder_model="codellama/CodeLlama-7b-hf",
