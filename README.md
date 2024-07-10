@@ -1,60 +1,82 @@
-# A minimalistic LLM agent for Exploratory Data Analysis (EDA) using pandas library
-## *Task*: given a CSV or a XLSX file, respond to user's query about this table by generating a python code and executing it.
+# Optimizing LLM-Powered Agents for Tabular Data Analytics 🚀
 
+## Overview 📋
 
-**Query example:** 'I want to know the average gdp of countries that have happiness index greater than 5.5. I also need these countries.'
+This repository contains the code and resources for my [diploma thesis](https://dspace.cvut.cz/bitstream/handle/10467/115388/F3-DP-2024-Poludin-Mikhail-Optimizing_LLM-Powered_Agents_for_Tabular_Data_Analytics_Integrating_LoRA_for_Enhanced_Quality.pdf?sequence=-1&isAllowed=y). The project explores the use of Large Language Models (LLMs) in analyzing tabular data using natural language by generation and execution of Python code. The thesis includes a comprehensive literature review, development of an LLM-based Agent program, and performance evaluations using fine-tuned and state-of-the-art models.
 
-![alt text](https://github.com/poludmik/AgentToBeNamed/blob/master/README/AgentScreenshotNewLocal.png?raw=true)
+## Project Structure 🗂️
 
+The project is organized as follows:
 
-## Flow parts that are used by agent:
-* Tagging the query - using a LM to classify the query to "plot" or "general". Two methods are implemented, using OpenAI 
-functions tagging of a Pydantic object and using a classifier LM (DeBERTa) to classify the query. This is needed to instruct the 
-LLM to save the plot to a directory, so that it could be later sent as a Response via FastAPI to the user. Or if it is just a text
-answer type of question, the LLM would be instructed not to do any plotting.
+```plaintext
+TableQA-LLMAgent/       # Root directory
+│
+├── .github/            # CI/CD workflows
+│   └── workflows/
+│
+├── README.md           # This README file
+├── main.py             # Agent usage example
+├── poetry.lock         # Poetry dependency management
+├── pyproject.toml      # Readable dependencies
+│
+├── tableqallmagent/    # Source code of the package
+│   ├── __init__.py
+│   ├── agent.py        # Constructor and the main interface
+│   ├── code_manipulation.py # Processing generated code
+│   ├── coder_llms.py   # Forward passes for coding LLMs
+│   ├── llms.py         # Higher level methods for LLMs
+│   ├── logger.py       # Color constants for readability
+│   ├── prompts.py      # Prompting strategies and formatting
+│
+├── dataset/            # Multiple datasets and preprocessing
+├── dist/               # PyPI versions
+├── evaluation/         # LLM-as-evaluator
+├── finetuning/         # LoRA training scripts and configs
+├── plots/              # Directory to store generated images
+└── tests/              # pytest
+```
 
-* Generating the plan - using a LM to generate a step-by-step plan for the coder. Inspired by [Solve and Plan (Wang et al., 2023)](https://arxiv.org/pdf/2305.04091.pdf). 
-Helps smaller LLMs significantly.
+## Installation 🔧
 
-* Generating the code - using a LM to generate a python code to do the data analysis. 
-The code is then executed and the result is returned to the user.
+To get started with the project, follow these steps:
 
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/poludmik/TableQA-LLMAgent.git
+    cd TableQA-LLMAgent
+    ```
 
-## 4 different flow strategies are implemented:
+2. Install the dependencies:
+    ```bash
+    poetry install
+    ```
 
-* _"simple"_ - Tagging the query, generating the plan, generating the code, executing the code, returning the result to the user.
-* _"simple_functions"_ - Same, but asking the CoderLLM to generate a python function instead of a main script. 
-This way, the output could be better tested, as the agent mostly returns a single value (string, float, DataFrame, etc.).
+## Usage 🚀
 
-![alt text](https://github.com/poludmik/AgentToBeNamed/blob/master/README/diagram_plan.png?raw=true)
-* _"coder_only_simple"_ - No planning step, just generating the script and executing it.
-* _"coder_only_functions"_ - Same, but asking the CoderLLM to generate a python function instead of a main script.
+You can run the main script to see the basic example functionalities of the agent:
 
-![alt text](https://github.com/poludmik/AgentToBeNamed/blob/master/README/diagram_coder.png?raw=true)
+```bash
+python main.py
+```
 
-## Agent arguments:
-* `max_debug_timees` - maximum number of debug times for the agent to run. If the agent runs out of debug times, it will return an error message to the user.
-* `head_number` - number of first rows of a DataFrame to show to the LLM.
-* `prompt_strategy` - flow strategy to use (described above).
-* `coder_model` - model to use for the CoderLLM. Supported models are "codellama/CodeLlama-7b-Instruct-hf", "WizardLM/WizardCoder-1(3, 15)B-V1.0" and gpt models.
-* `gpt_model` - model used for planning
-* `add_column_description` - if True, the agent will add a json-formatted description of the columns to the prompt for the LLM. 
-This ensures that the LLM knows the precise column names and accompanying values.
-* `tagging_strategy` - strategy to use for tagging the query. Supported strategies are "openai" and "deberta".
+## Features ✨
 
-## **answer_query** arguments:
-* `show_plot` - if True, the agent will show the plot to the user interactively. If False, the agent will save the plot to a directory.
-* `save_plot_path` - path to save the plot to. If None, the plotname will be generated.
+- **Fine-Tuning**: Fine-tuning LLMs using LoRA and QLoRA techniques.
+- **Code Generation**: Generating Python code to analyze tabular data.
+- **Model Evaluation**: Rigorous benchmarks for evaluating LLM Agents.
+- **MLOps**: Tracking experiments using MLOps tools to ensure reproducibility.
 
-**answer_query** method returns a text answer and a dictionary with details and outputs from every step of the flow.
+## Results 📊
 
-## How to run the agent:
-See the main.py file for an example of how to run the agent.
+The fine-tuning experiments significantly improved the performance of the Code Llama 7B Python model from 35.3% to 60.3% on the proposed evaluation benchmark.
 
+## Contact 📫
 
-## Datasets and evaluation
-Public datasets are in the "datasets" folder
-Evaluation of the agent is in the "evaluation" folder.
+For any questions or feedback, please reach out to me:
 
-* `evaluation/collect_answers.py`runs a given agent on a given dataset and collects the answers to a xlsx file. Configs are stored in `conf/` folder.
-* `evaluation/evaluation.py` evaluates the answers in one xlsx to reference answers in another xlsx file either by string equality or asking a gpt model to compare the answers.
+Mikhail Poludin  
+[michael.poludin@gmail.com](mailto:michael.poludin@gmail.com)  
+
+## License 📜
+
+This project is licensed under the MIT License.
